@@ -1,0 +1,977 @@
+\documentclass[journal]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathrsfs}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{braket}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{siunitx}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=darkgray,
+    urlcolor=blue,
+    bookmarks=true,
+    bookmarksnumbered=true,
+    unicode=true,
+    pdftitle={Entanglement-Enhanced Quantum Radar via Dual-Arm GKSL Dynamics},
+    pdfauthor={Kumar Gautam and Kaumud Sharma}
+}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\sinc}{sinc}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\sech}{sech}
+\DeclareMathOperator{\erf}{erf}
+\DeclareMathOperator{\Var}{Var}
+\newcommand{\TMSV}{\text{TMSV}}
+\newcommand{\GKSL}{\text{GKSL}}
+\newcommand{\SLD}{\text{SLD}}
+\newcommand{\QFIM}{\text{QFIM}}
+\newcommand{\QCRB}{\text{QCRB}}
+\newcommand{\SJIP}{\text{SJIP}}
+\newcommand{\QDPI}{\text{QDPI}}
+\newcommand{\SPDC}{\text{SPDC}}
+\newcommand{\QVR}{\text{QVR}}
+\newcommand{\SNR}{\text{SNR}}
+\newcommand{\CPTP}{\text{CPTP}}
+
+
+\begin{document}
+
+\title{Entanglement-Enhanced Quantum Radar via Dual-Arm GKSL Dynamics and Fidelity-Based Target Discrimination}
+
+\author{Kumar~Gautam{$^1$} and Kaumud~Sharma{$^2$}
+\thanks{Corresponding Author: edumonk@ieee.org}
+\thanks{{$^{1,2}$} Department of Quantum Computing, Quantum Research and Centre of Excellence, Delhi, India.}
+\thanks{The authors gratefully acknowledge Prof.~K.~R.~Parthasarathy for invaluable guidance on quantum stochastic differential equations.}
+}
+
+\maketitle
+
+\begin{abstract}
+This paper develops a comprehensive and mathematically rigorous quantum radar framework by extending a layered classical-quantum (Cq) channel theory to the domain of quantum illumination. The core probe state is replaced from the single-mode coherent state to the two-mode squeezed vacuum (TMSV) state generated via spontaneous parametric down-conversion, establishing a quantum vacuum-seeded receiver (QVR) architecture in which the signal mode illuminates the target region while the idler mode is retained locally as a quantum reference. We obtain the complete dual-arm open-system dynamics: The signal arm (subject to round-trip atmospheric amplitude damping and phase dephasing) and the idler arm (stored in quantum memory with independent decoherence) are governed by two coupled Gorini-Kossakowski-Sudarshan-Lindblad (GKSL) master equations, along with a weak, common-oscillator-induced cross-dephasing term that vanishes in the limit of independent signal and idler reference oscillators. The central performance metric is the Uhlmann photon fidelity between the full two-mode returned state and the ideal noiseless TMSV reference, from which we derive a Neyman-Pearson-optimal detector -- bounded via the Fuchs--van~de~Graaf and quantum Stein inequalities rather than the quantum Chernoff bound -- and an upper bound linking estimation precision to expected fidelity loss (the fidelity-QCRB link). We derive the three-parameter quantum Fisher information matrix (QFIM) for the radar parameter vector -- target reflectivity, round-trip delay encoding range, and Doppler shift -- proving that the off-diagonal reflectivity-kinematic couplings vanish to leading order, and we benchmark the resulting quantum advantage against the coherent-state QFIM under matched loss and photon number, finding a bounded, loss-limited advantage rather than unconditional Heisenberg scaling. The semigroup Julia inversion problem (SJIP) NP-hardness result is ported from the fiber communication context to establish dual-layer anti-jamming security. Explicit engineering-ready parameter dependencies and experimentally testable predictions are provided throughout.
+\end{abstract}
+
+\begin{IEEEkeywords}
+\sloppy
+Quantum radar, two-mode squeezed vacuum, classical-quantum channel, GKSL master equation, Uhlmann fidelity, dual-arm decoherence.
+\end{IEEEkeywords}
+
+\IEEEpeerreviewmaketitle
+
+
+\section{Introduction}\label{sec:intro}
+
+\IEEEPARstart{T}{he} detection and ranging of objects using quantum states of electromagnetic radiation---quantum radar---represents one of the most compelling applied frontiers of quantum information science. The central premise, originating with the quantum illumination protocol of Lloyd~\cite{lloyd2008enhanced} and subsequently refined by Tan~\textit{et~al.}~\cite{tan2008quantum}, Shapiro~\cite{shapiro2009quantum}, and others, is that entanglement between a transmitted signal mode and a locally retained idler mode can confer a detection advantage over any classical coherent-state strategy, even when the entanglement is completely destroyed by environmental noise. This counter-intuitive resilience---termed the ``entanglement advantage without entanglement'' paradox---has been experimentally demonstrated in both microwave~\cite{barzanjeh2015microwave,chang2019quantum} and optical~\cite{zhang2015entanglement} regimes, and remains the subject of intense theoretical and experimental investigation~\cite{karsa2024quantum}.
+
+The theoretical analysis of quantum radar, however, has traditionally proceeded along two largely disconnected paths. On one side, quantum optical treatments derive the Gaussian-state covariance matrix of the signal-idler pair, compute the quantum Chernoff bound or Bhattacharyya coefficient for hypothesis testing, and compare the quantum-illumination signal-to-noise ratio to that of the optimal classical coherent-state radar~\cite{luong2020quantum,renga2023quantum}. On the other side, quantum information-theoretic treatments characterise the channel as a completely-positive trace-preserving (CPTP) map, bound its Holevo capacity, and study the computational complexity of optimal decoding~\cite{nair2020quantum}. What has been missing is a \textit{unified} framework that simultaneously: (i) starts from first-quantised electromagnetic field theory and derives the probe-state preparation; (ii) builds the classical-quantum (Cq) channel with explicit atmospheric and device-parameter dependencies; (iii) incorporates open-system GKSL noise with exact Kraus-operator solutions; (iv) proves capacity-enhancement via integrated quantum control; (v) establishes computational hardness results for adversarial decoding; and (vi) derives multi-parameter quantum Cramer-Rao bounds for the radar-specific observables.
+
+This paper constructs precisely such a unified framework by extending the five-layer fibre-optic Cq channel theory of~\cite{gautum2024rigorous} to the quantum radar setting. Each layer of the fibre framework maps naturally onto a corresponding radar problem:
+
+\textbf{Layer 1 -- Field quantisation and probe states.} The fibre framework quantises the electromagnetic field over modal decompositions and derives coherent states~$|\alpha\rangle$ as probe states. In the radar extension, the signal-idler entangled pair generated by spontaneous parametric down-conversion (SPDC) replaces the single-mode coherent probe. The squeezing parameter~$r$ controls both the signal power and the signal-idler quantum correlations.
+
+\textbf{Layer 2 -- Cq channel and Holevo capacity.} The fibre framework derives the Holevo capacity~$C(\theta)$ for BPSK coherent-state encoding. Quantum radar replaces this with the joint signal-idler channel capacity---a two-mode Holevo quantity over the TMSV state---and connects it to the photon-fidelity detection metric rather than the communication-rate metric.
+
+\textbf{Layer 3 -- GKSL noise with exact Kraus operators.} The single-mode GKSL master equation with amplitude damping and dephasing Kraus operators transfers directly. The radar extension requires \textit{two coupled} GKSL equations: one for the signal arm (propagating to the target and back, experiencing round-trip loss~$\gamma_{\text{loss}}(2L)$ and turbulence dephasing~$\gamma_{\varphi}(2L)$) and one for the idler arm (stored in quantum memory, experiencing~$\gamma_{\text{mem}} \cdot t_{\text{wait}}$). The cross-mode decoherence term---capturing how entanglement partially survives noise---is the key new physics contribution.
+
+\textbf{Layer 4 -- Integrated quantum control and NP-hardness.} The integrated control theorem (capacity enhancement via mid-evolution~$H_c(t)$) becomes a noise-mitigation strategy for the radar receiver. The semigroup Julia inversion problem (SJIP) NP-hardness result becomes an anti-jamming security guarantee: a jammer synthesising fake target returns must solve the same computationally intractable inversion problem.
+
+\textbf{Layer 5 -- Multi-parameter QCRB via QFIM.} The two-parameter QFIM for~$(\bar{n}, \phi)$ in the fibre paper extends to a three-parameter QFIM for~$\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega)$---target reflectivity, round-trip delay (encoding range), and Doppler shift. The diagonal structure carries over: reflectivity and phase parameters decouple at the Gaussian level.
+
+The \textbf{primary novel contributions} of this paper are:
+\begin{enumerate}
+    \item The dual-arm GKSL master equation with cross-mode decoherence, which captures the physically accurate open-system dynamics of both signal and idler modes under independent local noise with residual entanglement correlation.
+    \item The Uhlmann photon fidelity~$\mathcal{F}(\rho_{\text{return}}, \rho_{\text{ref}})$ as the central radar detection metric, together with the Neyman-Pearson threshold~$\mathcal{F}^{*}$ and the fidelity-QCRB link theorem.
+    \item The explicit three-parameter QFIM for~$(\kappa, \tau, \Delta\omega)$, derived via the symmetric logarithmic derivative formalism applied to the TMSV output state after the dual-arm noise channel.
+    \item The dual-layer anti-jamming security theorem, combining information-theoretic channel non-injectivity with SJIP computational hardness, ported from the eavesdropping context to the radar jamming context.
+    \item An adaptive Bayesian estimation algorithm (Algorithm~\ref{alg:adaptive_radar}) extended to the three-parameter radar space, with numerical convergence demonstrations.
+\end{enumerate}
+
+The paper is organised as follows. Section~\ref{sec:tmsv} introduces the TMSV probe states and the QVR architecture. Section~\ref{sec:dual_gksl} develops the dual-arm channel model with cross-decoherence. Section~\ref{sec:fidelity} establishes photon fidelity as the detection metric. Section~\ref{sec:qfim} derives the three-parameter QFIM and adaptive estimation protocol. Section~\ref{sec:security} ports the SJIP hardness result to anti-jamming security. Section~\ref{sec:numerical} presents numerical simulations. Section~\ref{sec:conclusion} concludes with future directions.
+
+
+\section{TMSV Probe States and the QVR Architecture}\label{sec:tmsv}
+
+\subsection{From Coherent States to Entangled Probe States}
+
+In the fibre-optic Cq channel~\cite{gautum2024rigorous}, the probe state is a single-mode coherent state~$|\alpha(\theta)\rangle$, where the complex amplitude $\alpha(\theta) = \alpha_0 e^{i\beta(\theta)L - \alpha_{\text{att}}L/2}$ encodes the classical symbol through the phase and carries the fibre-dependent attenuation. For quantum radar, we replace this with the two-mode squeezed vacuum state generated via spontaneous parametric down-conversion in a nonlinear~$\chi^{(2)}$ crystal.
+
+The SPDC Hamiltonian in the rotating-wave approximation is
+\begin{equation}\label{eq:spdc_hamiltonian}
+H_{\text{SPDC}} = i\hbar\chi^{(2)}\left(\hat{a}_s^\dagger \hat{a}_i^\dagger e^{-i\omega_p t} - \hat{a}_s \hat{a}_i e^{i\omega_p t}\right),
+\end{equation}
+where $\hat{a}_s$ ($\hat{a}_i$) is the annihilation operator for the signal (idler) mode and $\omega_p = \omega_s + \omega_i$ is the pump frequency. The interaction strength is
+\begin{equation}\label{eq:chi2_coupling}
+\chi^{(2)} = \sqrt{\frac{\hbar\omega_s\omega_i\omega_p}{2\epsilon_0 c^3 n_s n_i n_p}} \cdot d_{\text{eff}} \cdot \Phi(\Delta\mathbf{k}),
+\end{equation}
+where $d_{\text{eff}}$ is the effective nonlinear coefficient and $\Phi(\Delta\mathbf{k})$ is the phase-matching function depending on the wavevector mismatch $\Delta\mathbf{k} = \mathbf{k}_p - \mathbf{k}_s - \mathbf{k}_i$.
+
+\begin{definition}[TMSV State]\label{def:tmsv}
+The two-mode squeezed vacuum state generated by applying the two-mode squeezing operator $\hat{S}(r) = \exp[r(\hat{a}_s\hat{a}_i - \hat{a}_s^\dagger\hat{a}_i^\dagger)/2]$ to the vacuum is
+\begin{equation}\label{eq:tmsv_state}
+|\psi_{\text{TMSV}}\rangle = \hat{S}(r)|0\rangle_s|0\rangle_i = sech(r)\sum_{n=0}^{\infty}(-tanh r)^n |n\rangle_s|n\rangle_i ,
+\end{equation}
+where $r \geq 0$ is the squeezing parameter. The mean photon number in each mode is
+\begin{equation}\label{eq:mean_photon_tmsv}
+\bar{n} = \sinh^2 r,
+\end{equation}
+and the variance of the photon number difference $\hat{n}_s - \hat{n}_i$ is zero---a signature of perfect number correlations.
+\end{definition}
+
+\subsection{The QVR Architecture}
+
+The quantum vacuum-seeded receiver (QVR) architecture operates as follows. The TMSV state is prepared at the radar platform. The signal mode $\hat{a}_s$ is transmitted toward the target region through a noisy atmospheric/free-space channel of length~$L$, experiences reflection from a target with reflectivity~$\kappa$, and returns through the same channel (total propagation~$2L$). The idler mode $\hat{a}_i$ is stored in a local quantum memory for the round-trip duration $t_{\text{wait}} = 2L/c$. Upon return, a joint measurement is performed on the signal-idler pair.
+
+\begin{definition}[QVR Channel]\label{def:qvr_channel}
+The QVR channel is the concatenation of three operations:
+\begin{enumerate}
+    \item[(i)] \textit{Signal propagation}: the signal mode undergoes forward propagation through the atmospheric channel $\mathcal{N}_{\text{atm}}^{(L)}$, target interaction via the reflectivity operator $\hat{R}(\kappa)$, and backward propagation $\mathcal{N}_{\text{atm}}^{(L)}$.
+    \item[(ii)] \textit{Idler storage}: the idler mode undergoes local quantum memory decoherence $\mathcal{N}_{\text{mem}}^{(t_{\text{wait}})}$.
+    \item[(iii)] \textit{Joint detection}: a joint POVM $\{\Pi_y\}$ is applied to the bipartite output state $\rho_{si}^{(\text{out})}$.
+\end{enumerate}
+\end{definition}
+
+The atmospheric channel is characterised by two dominant noise mechanisms: \textit{amplitude damping} (photon loss from atmospheric absorption and scattering) with rate~$\gamma_{\text{loss}}$, and \textit{phase damping} (dephasing from atmospheric turbulence and refractive index fluctuations) with rate~$\gamma_{\varphi}$. These are the direct analogues of the fibre-optic amplitude and phase damping rates~\cite{gautum2024rigorous}, with the critical difference that the round-trip propagation doubles the effective path length.
+
+\begin{definition}[Atmospheric Noise Parameters]\label{def:atm_noise}
+The amplitude-damping rate for round-trip atmospheric propagation follows directly from the Beer--Lambert attenuation law. If $\alpha_{\text{atm}}$ (dB/km) is the atmospheric extinction coefficient, the power transmittance over a one-way path of length~$L$ is $\eta_{\text{1-way}} = 10^{-\alpha_{\text{atm}}L/10}$. Writing this as an exponential decay in the interaction time $t=2L/v_g$ (round-trip propagation at group velocity $v_g$), the amplitude-damping \emph{rate} $\gamma_{\text{loss}}^{(s)}$ -- a quantity with units of inverse time, independent of $L$, that multiplies whatever interaction time it is evaluated over -- is
+\begin{equation}\label{eq:atm_loss_rate}
+\gamma_{\text{loss}}^{(s)} = \frac{\alpha_{\text{atm}} v_g \ln 10}{10},
+\end{equation}
+so that, for the round-trip time $t = 2L/v_g$, the standard exponential-loss channel is recovered exactly,
+\begin{equation}\label{eq:atm_loss_reduction}
+\eta(t) = e^{-\gamma_{\text{loss}}^{(s)}\,t} = e^{-\alpha_{\text{atm}}\,2L\,\ln 10/10} = 10^{-2\alpha_{\text{atm}}L/10},
+\end{equation}
+with $v_g \approx c$ the group velocity in air. (An earlier version of this definition multiplied the rate~(\ref{eq:atm_loss_rate}) by an extraneous additional factor of $2L$ and then omitted the explicit $t$ in the exponent of~(\ref{eq:atm_loss_reduction}); this double-counted the path length and left the resulting quantity dimensionally inconsistent. Equation~(\ref{eq:atm_loss_rate}) is the corrected, dimensionally consistent rate, and it is this quantity -- not a length-dependent one -- that is used as $\gamma_{\text{loss}}^{(s)}$ throughout Sections~\ref{sec:dual_gksl}--\ref{sec:qfim}, matching $\bar\gamma_{\text{loss}}$ as used in Section~\ref{sec:qfim}.)
+
+Unlike amplitude loss, the dominant dephasing mechanism in a \emph{free-space} channel is \emph{not} polarisation-mode dispersion (which is a guided-fibre effect and is strongly suppressed in free space, where polarisation is well preserved) but Kolmogorov-turbulence-induced phase distortion of the optical wavefront from random refractive-index fluctuations along the propagation path~\cite{tatarskii1971effects,andrews2005laser}. For a plane wave of wavenumber $k = 2\pi/\lambda_s$ propagating a one-way distance~$L$ through turbulence with refractive-index structure constant~$C_n^2$, the Rytov phase-variance is
+\begin{equation}\label{eq:rytov_variance}
+\sigma_\varphi^2(L) = 2.91\, C_n^2\, k^{7/6} L^{11/6},
+\end{equation}
+which accumulates over the full round-trip path as $\sigma_\varphi^2(2L) \approx 2\,\sigma_\varphi^2(L)$ for two statistically independent (outbound and return) turbulence realisations. Treating the accumulated phase noise as a Gaussian random-walk process with diffusion (dephasing) rate $\gamma_\varphi^{(2L)}$ over the round-trip time $t_{\text{prop}} = 2L/v_g$, i.e.\ $\sigma_\varphi^2(2L) = 2\gamma_\varphi^{(2L)} t_{\text{prop}}$, gives
+\begin{equation}\label{eq:atm_phase_rate}
+\gamma_{\varphi}^{(2L)} = \frac{\sigma_\varphi^2(2L)}{2\, t_{\text{prop}}} = \frac{2.91\, C_n^2\, k^{7/6} L^{11/6}}{2L/v_g},
+\end{equation}
+where $C_n^2$ (in $\text{m}^{-2/3}$) is the atmospheric refractive-index structure parameter and $v_g$ is the group velocity. Equation~(\ref{eq:atm_phase_rate}) replaces the fibre-optic polarisation-mode-dispersion expression used in the earlier communication-channel framework~\cite{gautum2024rigorous}, which does not describe free-space turbulence and is retained there only for the guided-wave setting.
+\end{definition}
+
+\begin{remark}
+The two rates enter the dual-arm master equation of Section~\ref{sec:dual_gksl} only through their functional role as an amplitude-damping rate and a pure-dephasing rate in the GKSL generator~(\ref{eq:signal_liouvillian}); the physical model producing each rate is otherwise independent of that generator. Equation~(\ref{eq:atm_phase_rate}) is therefore the physically appropriate replacement for the free-space channel considered here, while~(\ref{eq:atm_loss_rate}) is unchanged, since amplitude loss from absorption and scattering is well described by the Beer--Lambert law in both fibre and free-space settings.
+\end{remark}
+
+\subsection{Two-Mode Hamiltonian and Probe-State Preparation}
+
+The total Hamiltonian for the QVR system, generalising the atom-field interaction Hamiltonian of the fibre framework, is
+\begin{equation}\label{eq:total_hamiltonian}
+\hat{H}_{\text{QVR}}(t|\theta) = \hat{H}_0 + \hat{H}_{\text{int}}(t|\theta) + \hat{H}_{\text{env}}(t),
+\end{equation}
+where $\hat{H}_0$ is the free Hamiltonian of the bipartite signal-idler system,
+\begin{equation}\label{eq:free_hamiltonian}
+\hat{H}_0 = \hbar\omega_s\left(\hat{a}_s^\dagger\hat{a}_s + \frac{1}{2}\right) + \hbar\omega_i\left(\hat{a}_i^\dagger\hat{a}_i + \frac{1}{2}\right),
+\end{equation}
+and $\hat{H}_{\text{int}}(t|\theta)$ is the parametric interaction term~(\ref{eq:spdc_hamiltonian}). The environment Hamiltonian $\hat{H}_{\text{env}}(t)$ describes the bosonic bath degrees of freedom responsible for amplitude and phase damping.
+
+The Schrodinger equation for the bipartite state $|\Psi(t)\rangle$ is
+\begin{equation}\label{eq:schrodinger_bipartite}
+i\hbar\frac{d}{dt}|\Psi(t)\rangle = \hat{H}_{\text{QVR}}(t|\theta) |\Psi(t)\rangle,
+\end{equation}
+and tracing out the environmental degrees of freedom in the Born-Markov approximation yields the dual-arm GKSL master equation derived in Section~\ref{sec:dual_gksl}.
+
+\subsection{TMSV Covariance Matrix and Gaussian Character}
+
+The TMSV state is a Gaussian state completely characterised by its first moments (zero for vacuum-seeded states) and covariance matrix. For the two-mode system with quadratures $\hat{q}_s = (\hat{a}_s + \hat{a}_s^\dagger)/\sqrt{2}$, $\hat{p}_s = (\hat{a}_s - \hat{a}_s^\dagger)/(i\sqrt{2})$ and similarly for mode~$i$, the covariance matrix is~\cite{weedbrook2012gaussian}
+\begin{equation}\label{eq:tmsv_covariance}
+\mathbf{V}_{\text{TMSV}} = \frac{1}{2}\begin{pmatrix}
+\cosh 2r \cdot \mathbf{I}_2 & \sinh 2r \cdot \boldsymbol{\sigma}_z \\
+\sinh 2r \cdot \boldsymbol{\sigma}_z & \cosh 2r \cdot \mathbf{I}_2
+\end{pmatrix},
+\end{equation}
+where $\mathbf{I}_2$ is the $2\times 2$ identity and $\boldsymbol{\sigma}_z = \diag(1, -1)$. The off-diagonal blocks encode the inter-mode correlations (entanglement), quantified by the logarithmic negativity $E_N = \max[0, -\ln(2\nu_-)]$ where $\nu_-$ is the smallest symplectic eigenvalue of the partially transposed covariance matrix. For the TMSV state,
+\begin{equation}\label{eq:log_negativity}
+E_N = r = \text{arcsinh}\sqrt{\bar{n}}.
+\end{equation}
+
+This Gaussian structure is preserved under the Gaussian dual-arm noise channel of Section~\ref{sec:dual_gksl}, enabling closed-form expressions for the fidelity, QFIM, and detection statistics.
+
+% ============================================================
+% Section III: Dual-Arm GKSL Channel Model
+% ============================================================
+\section{Dual-Arm GKSL Channel Model with Cross-Decoherence}\label{sec:dual_gksl}
+
+\subsection{Single-Mode GKSL Review}
+
+The fibre-optic framework~\cite{gautum2024rigorous} establishes that for a single mode subject to amplitude damping (rate~$\gamma_1$) and phase damping (rate~$\gamma_\varphi$), the GKSL master equation is
+\begin{equation}\label{eq:single_gksl}
+\frac{d\rho}{dt} = -i[\hat{H}_S, \rho] + \gamma_1\mathcal{D}[\hat a]\rho + \gamma_\varphi\mathcal{D}[\hat a^\dagger\hat a]\rho,
+\end{equation}
+with $\mathcal D[\hat L]\rho=\hat L\rho\hat L^\dagger-\tfrac12\{\hat L^\dagger\hat L,\rho\}$ the standard dissipator, Lindblad operators $\hat{L}_1 = \hat{a}$ (amplitude damping) and $\hat{L}_2 = \hat{a}^\dagger\hat{a}$ (phase damping), and $\hat n=\hat a^\dagger\hat a$. Because the probe carries a mean photon number $\bar n=\sinh^2r$ that reaches $\sim 14$ at the operating point of Table~\ref{tab:sim_params}, both Kraus decompositions below must be given on the full (infinite-dimensional) Fock space; the $2\times2$ matrices used for illustration in an earlier version of this section are the amplitude- and phase-damping Kraus operators of a two-\emph{level} system, and fail the completeness relation $\sum_k\hat E_k^\dagger\hat E_k=\hat I$ once acting on any Fock state $|n\rangle$ with $n>1$ -- a gap raised in review. We give the correct, exact bosonic-mode decompositions here and use these throughout.
+
+\textbf{Amplitude damping.} The exact Kraus representation of the bosonic amplitude-damping (pure-loss) channel with transmissivity $\eta(t)=e^{-\gamma_1t}$ is the countable family~\cite{weedbrook2012gaussian}
+\begin{equation}\label{eq:kraus_amplitude}
+\hat{E}_k^{\text{amp}}(t) = \sqrt{\frac{(1-\eta(t))^k}{k!}}\;\eta(t)^{\hat n/2}\,\hat a^{\,k}, \qquad k=0,1,2,\dots
+\end{equation}
+Acting on a Fock state, $\hat E_k^{\text{amp}}(t)|n\rangle=\sqrt{\binom{n}{k}\eta(t)^{n-k}(1-\eta(t))^{k}}\,|n-k\rangle$ for $n\geq k$ (zero otherwise) -- the familiar binomial photon-loss transition amplitude -- and completeness $\sum_{k=0}^\infty\hat E_k^{\text{amp}\dagger}(t)\hat E_k^{\text{amp}}(t)=\hat I$ follows termwise from the binomial identity $\sum_{k=0}^n\binom{n}{k}\eta^{n-k}(1-\eta)^k=1$ on every $n$-photon subspace. Restricting~\eqref{eq:kraus_amplitude} to $k\in\{0,1\}$ and the two-dimensional span of $\{|0\rangle,|1\rangle\}$ recovers the qubit form used previously; the full bosonic channel needs the entire family $k=0,1,2,\dots$
+
+\textbf{Phase damping.} The Lindbladian $\gamma_\varphi\mathcal D[\hat n]$ is generated \emph{exactly} (not merely to leading order) by a random phase rotation $\hat a\to\hat a\,e^{i\theta}$ with $\theta$ a zero-mean Gaussian variable of variance $\sigma_\varphi^2(t)=2\gamma_\varphi t$: as used already in the proof of Theorem~\ref{thm:dual_gksl} below for the analogous common-oscillator mechanism, $\tfrac{d}{dt}\mathbb E_\theta[e^{-i\theta\hat n}\rho\,e^{i\theta\hat n}]=\dot\sigma_\varphi^2(t)\,\mathcal D[\hat n]\rho=\gamma_\varphi\mathcal D[\hat n]\rho$ for every $t$, since $\hat n$ is a fixed self-adjoint generator and the identity holds order by order in the Gaussian average. This yields the exact, continuous Kraus (Stinespring) family
+\begin{equation}\label{eq:kraus_phase}
+\hat{E}_\theta^{(\varphi)}(t) = \sqrt{p_t(\theta)}\;e^{i\theta\hat n}, \qquad p_t(\theta)=\frac{1}{\sqrt{4\pi\gamma_\varphi t}}\,e^{-\theta^2/(4\gamma_\varphi t)},
+\end{equation}
+with completeness $\int_{-\infty}^{\infty}d\theta\;\hat E_\theta^{(\varphi)\dagger}(t)\hat E_\theta^{(\varphi)}(t)=\int d\theta\,p_t(\theta)\,\hat I=\hat I$ holding trivially, and channel action $\mathcal N_\varphi(t)[\rho]=\int d\theta\,\hat E_\theta^{(\varphi)}(t)\,\rho\,\hat E_\theta^{(\varphi)\dagger}(t)$ reproducing $\dot\rho=\gamma_\varphi\mathcal D[\hat n]\rho$ exactly.
+
+\begin{lemma}[Commutation of Loss and Dephasing]\label{lem:commute}
+The single-mode Lindbladians $\mathcal D[\hat a]$ and $\mathcal D[\hat n]$ commute as super-operators, $[\mathcal D[\hat a],\mathcal D[\hat n]]=0$. Consequently the channel generated by~\eqref{eq:single_gksl} factorises \emph{exactly} as $\Lambda(t)=\Lambda_{\text{amp}}(t)\circ\Lambda_\varphi(t)=\Lambda_\varphi(t)\circ\Lambda_{\text{amp}}(t)$, with Kraus operators $\hat E_\theta^{(\varphi)}(t)\,\hat E_k^{\text{amp}}(t)$, $(k,\theta)\in\{0,1,2,\dots\}\times\mathbb R$.
+\end{lemma}
+\begin{proof}
+Grade the (trace-class) operator space by coherence order $\ell=m-n$ in the Fock basis. For $X=|m\rangle\langle n|$, direct computation from the definition of $\mathcal D$ gives
+\[
+\mathcal D[\hat n]\,|m\rangle\langle n| = \big(mn-\tfrac12(m^2+n^2)\big)|m\rangle\langle n| = -\tfrac12(m-n)^2\,|m\rangle\langle n|,
+\]
+so $\mathcal D[\hat n]$ acts as the \emph{scalar} $-\tfrac12\ell^2$ on every basis operator of order $\ell$, i.e.\ it is diagonal with respect to the grading by $\ell$. Separately,
+\[
+\mathcal D[\hat a]\,|m\rangle\langle n| = \sqrt{mn}\,|m-1\rangle\langle n-1| - \tfrac12(m+n)\,|m\rangle\langle n|,
+\]
+which maps the order-$\ell$ subspace $\{|m\rangle\langle n|:m-n=\ell\}$ into itself, since both $|m-1\rangle\langle n-1|$ and $|m\rangle\langle n|$ have order $\ell$. An operator that preserves a graded subspace necessarily commutes with any operator acting as a scalar on that same subspace; applying this to each order-$\ell$ sector and summing over $\ell$ (equivalently, by linearity on the full basis $\{|m\rangle\langle n|\}$) gives $[\mathcal D[\hat a],\mathcal D[\hat n]]=0$ on all of trace-class operator space. Commuting bounded generators exponentiate to commuting, composable semigroups, $e^{t(\gamma_1\mathcal D[\hat a]+\gamma_\varphi\mathcal D[\hat n])}=e^{t\gamma_1\mathcal D[\hat a]}e^{t\gamma_\varphi\mathcal D[\hat n]}$, and the stated Kraus operators are those of the composed maps.
+\end{proof}
+
+\subsection{Dual-Arm GKSL Master Equation}
+
+For the QVR architecture, we require two coupled GKSL equations: one for the signal mode (propagating to the target and back) and one for the idler mode (stored locally). Physically, the atmospheric bath acting on the outbound/return signal and the quantum-memory bath acting on the stored idler are \emph{spatially separated and mechanistically independent} reservoirs (turbulent air versus, e.g., an atomic-ensemble or solid-state memory), so there is no physical mechanism by which these two baths could be correlated at the level of the fundamental noise Lindbladians -- a point correctly raised in review. We therefore do \emph{not} assert bath-level correlations. The cross term retained below has a distinct and more limited physical origin: the signal and idler modes are generated from, and later read out against, a \emph{common} laser source (the SPDC pump and the local-oscillator reference used for the idler's homodyne read-out share the same master oscillator). Residual phase noise of this shared oscillator -- clock jitter and slow phase drift common to both arms -- produces a genuine, if weak, correlated fluctuation between the effective dephasing experienced by the two modes, independent of and in addition to the uncorrelated atmospheric/memory dissipation. This is a technical (device-level), not a fundamental, effect, and it is bounded by the oscillator's phase-noise power spectral density rather than by the atmospheric or memory decoherence rates themselves.
+
+\begin{theorem}[Dual-Arm GKSL Master Equation]\label{thm:dual_gksl}
+Let $\rho_{si}(t)$ be the joint density operator of the signal-idler bipartite system. Under the Born-Markov approximation with independent local baths for each mode and a weak cross-correlation, the evolution is governed by
+\begin{equation}\label{eq:dual_gksl}
+\frac{d\rho_{si}}{dt} = \mathcal{L}_s[\rho_{si}] + \mathcal{L}_i[\rho_{si}] + \mathcal{L}_{\text{cross}}[\rho_{si}],
+\end{equation}
+where
+\begin{align}
+\mathcal{L}_s[\rho_{si}] &= -i[\hat{H}_s, \rho_{si}] + \gamma_{\text{loss}}^{(s)}\mathcal{D}[\hat{a}_s]\rho_{si} + \gamma_{\varphi}^{(s)}\mathcal{D}[\hat{a}_s^\dagger\hat{a}_s]\rho_{si}, \label{eq:signal_liouvillian}\\
+\mathcal{L}_i[\rho_{si}] &= -i[\hat{H}_i, \rho_{si}] + \gamma_{\text{loss}}^{(i)}\mathcal{D}[\hat{a}_i]\rho_{si} + \gamma_{\varphi}^{(i)}\mathcal{D}[\hat{a}_i^\dagger\hat{a}_i]\rho_{si}, \label{eq:idler_liouvillian}\\
+\mathcal{L}_{\text{cross}}[\rho_{si}] &= \gamma_{\text{cross}}\Big(\hat{a}_s\rho_{si}\hat{a}_i^\dagger + \hat{a}_i\rho_{si}\hat{a}_s^\dagger \notag\\
+&\qquad\quad - \frac{1}{2}\big\{\hat{a}_s^\dagger\hat{a}_i+\hat{a}_i^\dagger\hat{a}_s,\, \rho_{si}\big\}\Big), \label{eq:cross_liouvillian}
+\end{align}
+with $\mathcal{D}[\hat{L}]\rho = \hat{L}\rho\hat{L}^\dagger - \frac{1}{2}\{\hat{L}^\dagger\hat{L}, \rho\}$ the standard dissipator. The noise rates are given by Definition~\ref{def:atm_noise} for the signal arm and
+\begin{equation}\label{eq:idler_noise_rates}
+\gamma_{\text{loss}}^{(i)} = \gamma_{\text{mem,loss}}, \qquad \gamma_{\varphi}^{(i)} = \gamma_{\text{mem},\varphi}
+\end{equation}
+for the idler arm (quantum memory decoherence). Because the signal and idler baths (atmosphere and quantum memory, respectively) are physically independent, $\mathcal{L}_{\text{cross}}$ does \emph{not} arise from bath correlations; it instead models the effect of phase noise common to the shared laser source that generates the SPDC pump and provides the local-oscillator reference for idler read-out. Writing $S_{\text{LO}}(f)$ for the one-sided phase-noise power spectral density of this shared oscillator, the cross-dephasing rate is bounded by the oscillator linewidth rather than by the arm-specific loss rates,
+\begin{equation}\label{eq:cross_rate}
+\gamma_{\text{cross}} = C_{si}\cdot \Delta\nu_{\text{LO}}, \qquad C_{si} = \frac{\displaystyle\int_0^{f_c} S_{\text{LO}}(f)\,df}{\displaystyle\int_0^{\infty} S_{\text{LO}}(f)\,df} \in [0,1],
+\end{equation}
+where $\Delta\nu_{\text{LO}}$ is the oscillator linewidth and $C_{si}$ is the fraction of oscillator phase noise below the coherence bandwidth~$f_c \sim 1/t_{\text{wait}}$ that is common to both the outbound-signal and idler-readout paths. If the two arms instead use independent, unlocked local oscillators (or if $t_{\text{wait}}$ greatly exceeds the oscillator coherence time, so $f_c \to 0$), then $C_{si} \to 0$ and $\gamma_{\text{cross}} \to 0$, so that Theorem~\ref{thm:dual_gksl} reduces to two independent, uncorrelated GKSL equations -- the physically expected limit -- and is retained in what follows purely as a (typically small) correction rather than a load-bearing assumption.
+\end{theorem}
+
+\begin{proof}
+We treat the dissipative and dephasing contributions separately, since they have distinct physical origins.
+
+\emph{Dissipative part.} The signal and idler modes couple to two \emph{independent} bosonic reservoirs (the atmospheric field modes and the quantum-memory phonon/spin bath, respectively),
+\begin{equation}
+\hat{H}_{\text{total}} = \hat{H}_S + \hat{H}_B^{(s)} + \hat{H}_B^{(i)} + \hat{H}_{\text{int}}^{(s)} + \hat{H}_{\text{int}}^{(i)},
+\end{equation}
+with $\hat{H}_{\text{int}}^{(m)} = \sum_k g_k^{(m)}(\hat{a}_m \hat{b}_{k,m}^\dagger + \hat{a}_m^\dagger \hat{b}_{k,m})$, $m\in\{s,i\}$, and $[\hat{b}_{k,s},\hat{b}_{k',i}^\dagger]=0$ for all $k,k'$ (independent reservoirs, as argued above). The standard Born-Markov derivation (see, e.g.,~\cite{breuer2002theory}) with $\langle \hat b_{k,m}(t)\hat b_{k',m}^\dagger(t-\tau)\rangle = \delta_{kk'}N_k^{(m)} e^{-i\omega_k\tau}$ then yields, independently for each arm, the standard single-mode Lindbladian~(\ref{eq:single_gksl}), reproducing~(\ref{eq:signal_liouvillian}) and~(\ref{eq:idler_liouvillian}) with no cross term: since the two baths do not couple, $\Tr_{B^{(s)},B^{(i)}}$ factorises and no $\hat a_s$--$\hat a_i$ cross-dissipator can appear from this part of the derivation.
+
+\emph{Common-oscillator dephasing.} Independently of the bath coupling above, both modes acquire a classical, stochastic phase $\hat a_m \to \hat a_m e^{i\phi_{\text{LO}}(t)}$ from the shared local-oscillator phase $\phi_{\text{LO}}(t)$, modelled as a zero-mean Gaussian process with $\langle \phi_{\text{LO}}(t)\phi_{\text{LO}}(t')\rangle = 2\gamma_{\text{cross}}\min(t,t')$ (Wiener-process phase diffusion, the standard model for oscillator phase noise). Averaging the resulting unitary conjugation $\rho_{si}(t) = \mathbb{E}_{\phi_{\text{LO}}}\!\left[e^{-i\phi_{\text{LO}}(t)(\hat n_s+\hat n_i)}\rho_{si}(0)e^{i\phi_{\text{LO}}(t)(\hat n_s+\hat n_i)}\right]$ over the Gaussian process and differentiating in~$t$ gives, to leading order in $\gamma_{\text{cross}}t\ll 1$, the Lindblad dissipator $2\gamma_{\text{cross}}\mathcal D[\hat n_s+\hat n_i]$ generated by the joint number operator $\hat n_s+\hat n_i = \hat a_s^\dagger\hat a_s+\hat a_i^\dagger\hat a_i$ (the leading factor of $2$ is the diffusion rate $\mathrm d\sigma_{\phi_{\text{LO}}}^2/\mathrm dt=2\gamma_{\text{cross}}$ itself, via the standard identity $\tfrac{\mathrm d}{\mathrm dt}\mathbb E_{\phi}[e^{-i\phi N}\rho e^{i\phi N}] = -\tfrac12\dot\sigma_\phi^2[N,[N,\rho]] = \dot\sigma_\phi^2\,\mathcal D[N]\rho$ for a Wiener phase of variance $\sigma_\phi^2(t)$).
+
+Expanding the dissipator on the joint number operator,
+\begin{equation}\label{eq:number_cross_split}
+\mathcal D[\hat n_s+\hat n_i]\rho = \mathcal D[\hat n_s]\rho + \mathcal D[\hat n_i]\rho + \mathcal D_{\text{cross}}[\rho],
+\end{equation}
+where the genuinely new piece is
+\begin{equation}\label{eq:number_cross_def}
+\mathcal D_{\text{cross}}[\rho] := \hat n_s\rho\hat n_i + \hat n_i\rho\hat n_s - \{\hat n_s\hat n_i,\rho\},
+\end{equation}
+which is manifestly Hermiticity-preserving (each of $\hat n_s\rho\hat n_i+\hat n_i\rho\hat n_s$ and $\hat n_s\hat n_i$ is self-adjoint, since $\hat n_s,\hat n_i$ commute and are each Hermitian).
+
+To fix the relative weight of $\mathcal D_{\text{cross}}$ against the self-dephasing pieces $\mathcal D[\hat n_s],\mathcal D[\hat n_i]$ that ultimately governs the coefficient of $\gamma_{\text{cross}}$ in $\gamma_\varphi^{(\text{tot})}$~(\ref{eq:total_dephasing}), we evaluate the adjoint (Heisenberg-picture) action of each generator on the operator $\hat a_s\hat a_i$, whose expectation value is exactly the signal-idler correlator that determines the off-diagonal (entanglement-carrying) block of $\mathbf V^{(\text{out})}$. Using the operator identity $\hat n\hat a = \hat a(\hat n-1)$ repeatedly, a direct computation gives, for a single mode,
+\begin{equation}\label{eq:self_dephasing_adjoint}
+\mathcal D[\hat n_m]^\dagger(\hat a_m) = \hat n_m\hat a_m\hat n_m - \tfrac12\{\hat n_m^2,\hat a_m\} = -\tfrac12\hat a_m,
+\end{equation}
+so that, embedded in the two-mode operator $\hat a_s\hat a_i$ (with $\hat a_i$ or $\hat a_s$ a spectator, commuting with the other mode's number operator),
+\begin{equation}
+\big[\mathcal D[\hat n_s]^\dagger(\hat a_s)\big]\hat a_i = \hat a_s\big[\mathcal D[\hat n_i]^\dagger(\hat a_i)\big] = -\tfrac12\hat a_s\hat a_i.
+\end{equation}
+For the cross piece~(\ref{eq:number_cross_def}), the analogous (exact, not approximate) computation -- using $\hat n_i(\hat a_s\hat a_i)\hat n_s=\hat a_s\hat a_i\,\hat n_s(\hat n_i-1)$, $\hat n_s(\hat a_s\hat a_i)\hat n_i=\hat a_s\hat a_i\,(\hat n_s-1)\hat n_i$, and $\{\hat n_s\hat n_i,\hat a_s\hat a_i\}=\hat a_s\hat a_i\big[2\hat n_s\hat n_i-\hat n_s-\hat n_i+1\big]$ -- gives
+\begin{equation}\label{eq:cross_dephasing_adjoint}
+\begin{split}
+\mathcal D_{\text{cross}}^\dagger(\hat a_s\hat a_i) &= \hat a_s\hat a_i\Big[\hat n_s(\hat n_i-1)+(\hat n_s-1)\hat n_i\\
+&\qquad -\big(2\hat n_s\hat n_i-\hat n_s-\hat n_i+1\big)\Big]\\
+&= -\hat a_s\hat a_i.
+\end{split}
+\end{equation}
+Comparing~(\ref{eq:cross_dephasing_adjoint}) with the single-arm result immediately above,
+\begin{equation}\label{eq:factor_of_two}
+\mathcal D_{\text{cross}}^\dagger(\hat a_s\hat a_i) = 2\Big[\big(\mathcal D[\hat n_s]^\dagger(\hat a_s)\big)\hat a_i\Big] = 2\Big[\hat a_s\big(\mathcal D[\hat n_i]^\dagger(\hat a_i)\big)\Big],
+\end{equation}
+an \emph{exact} operator identity, independent of the state: the cross-dissipator removes coherence from the two-mode correlator $\langle\hat a_s\hat a_i\rangle$ at exactly twice the rate at which either self-dissipator alone removes it from that same correlator. Consequently, under the full shared-oscillator generator $2\gamma_{\text{cross}}\mathcal D[\hat n_s+\hat n_i]$, the genuinely new (i.e., not already attributable to $\gamma_\varphi^{(s)},\gamma_\varphi^{(i)}$) contribution to $\mathrm d\langle\hat a_s\hat a_i\rangle/\mathrm dt$ is
+\begin{equation}
+2\gamma_{\text{cross}}\,\mathcal D_{\text{cross}}^\dagger(\hat a_s\hat a_i) = -2\gamma_{\text{cross}}\langle\hat a_s\hat a_i\rangle,
+\end{equation}
+which is precisely the origin of the "$+2\gamma_{\text{cross}}$" term in $\gamma_\varphi^{(\text{tot})}$ of Proposition~\ref{prop:gaussian}, Eq.~(\ref{eq:total_dephasing}). (For completeness: the same generator's embedded $\mathcal D[\hat n_s],\mathcal D[\hat n_i]$ pieces also contribute an additional pure single-arm dephasing of $2\gamma_{\text{cross}}$ to each arm individually, on top of $\gamma_\varphi^{(s)},\gamma_\varphi^{(i)}$; since $\gamma_{\text{cross}}$ is parametrically the smallest rate in the model -- $C_{si}=0.01$ in Table~\ref{tab:sim_params} -- this additional self-dephasing is neglected at the same order as other sub-leading corrections dropped throughout the weak-noise expansion, consistent with $\mathcal L_{\text{cross}}$ being retained "purely as a (typically small) correction.")
+
+Because $\mathcal D_{\text{cross}}$ is quartic in the mode operators, it does not itself close on the quadratic (Gaussian) covariance-matrix description used throughout this paper. The quadratic generator $\mathcal L_{\text{cross}}$ of~(\ref{eq:cross_liouvillian}) -- symmetrised to $-\tfrac12\{\hat a_s^\dagger\hat a_i+\hat a_i^\dagger\hat a_s,\rho\}$ so that it is manifestly Hermiticity-preserving, and of the "random-unitary"/common-bath Lindblad form required for the Kraus construction of Theorem~\ref{thm:dual_kraus} -- is adopted as the effective quadratic generator for the covariance-matrix dynamics: on a zero-mean Gaussian state it reproduces the same correlator decay rate $2\gamma_{\text{cross}}\langle\hat a_s\hat a_i\rangle$ derived exactly above from $\mathcal D_{\text{cross}}$, via the Gaussian (Wick) factorisation of the higher moments that $\mathcal L_{\text{cross}}$'s adjoint action on $\hat a_s\hat a_i$ would otherwise generate. Positivity of the resulting map is automatic, since it is by construction (via its symmetrised, common-bath form) an average of unitary conjugations (a random-unitary channel), so complete positivity holds for \emph{any} $C_{si}\in[0,1]$, without requiring the ad hoc bound previously asserted.
+\end{proof}
+
+\subsection{Kraus Operator Representation for the Dual-Arm Channel}
+
+\begin{theorem}[Exact Kraus Operators for Dual-Arm Channel]\label{thm:dual_kraus}
+Let $\mathcal N_s(t)$ and $\mathcal N_i(t)$ denote the single-mode combined loss-and-dephasing channels of Lemma~\ref{lem:commute}, applied with rates $(\gamma_{\text{loss}}^{(s)},\gamma_\varphi^{(s)})$ and $(\gamma_{\text{loss}}^{(i)},\gamma_\varphi^{(i)})$ respectively (Definition~\ref{def:atm_noise} and Eq.~(\ref{eq:idler_noise_rates})). At $\gamma_{\text{cross}}=0$ the dual-arm channel of Theorem~\ref{thm:dual_gksl} is \emph{exactly} $\mathcal N_{\text{dual}}^{(0)}:=\mathcal N_s(t)\otimes\mathcal N_i(t)$, with Kraus operators
+\begin{equation}\label{eq:dual_kraus_zeroth}
+\hat K^{(0)}_{k,l;\theta_s,\theta_i} = \Big[\hat E_{\theta_s}^{(\varphi,s)}(t)\,\hat E_k^{\text{amp},s}(t)\Big]\otimes\Big[\hat E_{\theta_i}^{(\varphi,i)}(t)\,\hat E_l^{\text{amp},i}(t)\Big],
+\end{equation}
+indexed by $k,l\in\{0,1,2,\dots\}$, $\theta_s,\theta_i\in\mathbb R$, and satisfying $\sum_{k,l}\iint d\theta_sd\theta_i\;\hat K^{(0)\dagger}_{k,l;\theta_s,\theta_i}\hat K^{(0)}_{k,l;\theta_s,\theta_i}=\hat I_{si}$.
+
+For $\gamma_{\text{cross}}\neq0$, writing $U(t):=e^{t\mathcal L}$ for the full dual-arm channel ($\mathcal L=\mathcal L_s+\mathcal L_i+\mathcal L_{\text{cross}}$) and $U_0(t):=e^{t(\mathcal L_s+\mathcal L_i)}=\mathcal N_{\text{dual}}^{(0)}(t)$, the channel satisfies the \emph{exact} Duhamel identity
+\begin{equation}\label{eq:duhamel_exact}
+U(t) = U_0(t) + \int_0^t U_0(t-s)\,\mathcal L_{\text{cross}}\,U(s)\,ds,
+\end{equation}
+whose first-order truncation in $\gamma_{\text{cross}}$ gives
+\begin{equation}\label{eq:dual_kraus}
+\mathcal{N}_{\text{dual}}(\rho_{si}) = \mathcal N_{\text{dual}}^{(0)}(\rho_{si}) + \int_0^t U_0(t-s)\big[\mathcal L_{\text{cross}}\big(U_0(s)[\rho_{si}]\big)\big]\,ds + O(\gamma_{\text{cross}}^2t^2).
+\end{equation}
+The zeroth-order-plus-correction map on the right of~\eqref{eq:dual_kraus} is itself completely positive and trace preserving to the order shown (it agrees with the genuinely CPTP map $U(t)$ up to $O(\gamma_{\text{cross}}^2t^2)$), so the Kraus representation theorem~\cite[Sec.~8.2]{breuer2002theory} guarantees an explicit Kraus set $\{\hat K_{\mu\nu}\}$ reproducing~\eqref{eq:dual_kraus}: at $O(\gamma_{\text{cross}}^0t)$ this set is~\eqref{eq:dual_kraus_zeroth}, and at $O(\gamma_{\text{cross}}t)$ it is supplemented by additional operators of magnitude $O(\sqrt{\gamma_{\text{cross}}t})$ built from $U_0(t-s)(\hat a_s{+}\hat a_i)U_0(s)$-type combinations, consistent with the correction being $O(\gamma_{\text{cross}}t)$ in trace norm.
+\end{theorem}
+
+\begin{proof}
+\emph{Zeroth order.} When $\gamma_{\text{cross}}=0$, the Liouvillians~(\ref{eq:signal_liouvillian}) and~(\ref{eq:idler_liouvillian}) act on different tensor factors, so the semigroup factorises exactly, $U_0(t)=e^{t\mathcal L_s}\otimes e^{t\mathcal L_i}$. Applying Lemma~\ref{lem:commute} to each factor separately gives the explicit product Kraus family~\eqref{eq:dual_kraus_zeroth}, and its completeness relation follows from the completeness of each single-mode factor (established in Section~\ref{sec:dual_gksl}.A) together with $(A\otimes B)^\dagger(A\otimes B)=A^\dagger A\otimes B^\dagger B$.
+
+\emph{Duhamel identity.} Both $U(t)$ and $U_0(t)$ are one-parameter semigroups of bounded linear super-operators on trace-class operators, satisfying $\dot U=(\mathcal L_s+\mathcal L_i+\mathcal L_{\text{cross}})U$ and $\dot U_0=(\mathcal L_s+\mathcal L_i)U_0$ with $U(0)=U_0(0)=\mathrm{id}$. Define $R(t):=U_0(t)+\int_0^t U_0(t-s)\,\mathcal L_{\text{cross}}\,U(s)\,ds$. Differentiating under the integral sign and using $\dot U_0(t-s)=(\mathcal L_s+\mathcal L_i)U_0(t-s)$,
+\[
+\dot R(t) = (\mathcal L_s+\mathcal L_i)U_0(t) + \mathcal L_{\text{cross}}U(t) + \int_0^t(\mathcal L_s+\mathcal L_i)U_0(t-s)\,\mathcal L_{\text{cross}}\,U(s)\,ds,
+\]
+which is exactly $(\mathcal L_s+\mathcal L_i)R(t)+\mathcal L_{\text{cross}}U(t)$. Setting $\Delta(t):=U(t)-R(t)$, one finds $\dot\Delta(t)=(\mathcal L_s+\mathcal L_i)\Delta(t)$ (the $\mathcal L_{\text{cross}}U(t)$ terms cancel between $\dot U$ and $\dot R$) with $\Delta(0)=U(0)-R(0)=\mathrm{id}-U_0(0)=0$; by uniqueness of solutions to this linear ODE, $\Delta(t)\equiv0$, i.e.\ $R(t)=U(t)$ for all $t\geq0$. This is~\eqref{eq:duhamel_exact}, the standard Duhamel (variation-of-parameters) identity for a perturbed quantum dynamical semigroup~\cite[Sec.~8.2]{breuer2002theory}, and it holds to \emph{all} orders in $\gamma_{\text{cross}}$, with no Trotter approximation required.
+
+\emph{First-order truncation.} Replacing $U(s)$ under the integral in~\eqref{eq:duhamel_exact} by $U_0(s)$ introduces an error of $O(\gamma_{\text{cross}}^2t^2)$, since $\mathcal L_{\text{cross}}=O(\gamma_{\text{cross}})$ and each further iteration of~\eqref{eq:duhamel_exact} contributes one additional power of $\gamma_{\text{cross}}$ (the standard Dyson-series bookkeeping). This substitution gives exactly~\eqref{eq:dual_kraus}. Recalling from the proof of Theorem~\ref{thm:dual_gksl} that $\mathcal L_{\text{cross}}=\mathcal D[\hat a_s+\hat a_i]-\mathcal D[\hat a_s]-\mathcal D[\hat a_i]$, each integrand $U_0(t-s)\big[\mathcal L_{\text{cross}}(U_0(s)[\cdot])\big]$ is, for fixed $s$, a difference of completely positive maps sandwiched between the two CP maps $U_0(t-s)$ and $U_0(s)$; since $C_{si}=0.01$ in Table~\ref{tab:sim_params} makes $\gamma_{\text{cross}}$ parametrically the smallest rate in the model, the $O(\gamma_{\text{cross}}^2t^2)$ remainder is legitimately negligible at this order, and~\eqref{eq:dual_kraus} is a controlled first-order approximation, not merely a formal series truncation.
+\end{proof}
+
+\subsection{Output State and Residual Entanglement}
+
+The output state after the dual-arm channel is
+\begin{equation}\label{eq:output_state}
+\rho_{si}^{(\text{out})} = \mathcal{N}_{\text{dual}}\left(\hat{S}(r)|0\rangle_{si}\langle 0|\hat{S}^\dagger(r)\right).
+\end{equation}
+
+\begin{proposition}[Gaussian Preservation]\label{prop:gaussian}
+The dual-arm GKSL channel with quadratic Lindblad operators $\hat{a}_m$ and $\hat{a}_m^\dagger\hat{a}_m$ maps Gaussian input states to Gaussian output states. The TMSV covariance matrix~(\ref{eq:tmsv_covariance}) evolves to
+\begin{equation}\label{eq:output_covariance}
+\begin{gathered}
+\mathbf{V}^{(\text{out})} =\\[2pt]
+\resizebox{0.48\textwidth}{!}{$\displaystyle\begin{pmatrix}
+\eta_s \cosh 2r + (1-\eta_s)(\bar{n}_{\text{th}}^{(s)} + \tfrac{1}{2}) & \sqrt{\eta_s\eta_i}\sinh 2r \boldsymbol{\sigma}_z e^{-\gamma_{\varphi}^{(\text{tot})}t}  \\
+\sqrt{\eta_s\eta_i}\sinh 2r \boldsymbol{\sigma}_z e^{-\gamma_{\varphi}^{(\text{tot})}t}   & \eta_i \cosh 2r + (1-\eta_i)(\bar{n}_{\text{th}}^{(i)} + \tfrac{1}{2})
+\end{pmatrix}$}
+\end{gathered}
+\end{equation}
+where $\eta_s = e^{-\gamma_{\text{loss}}^{(s)}t}$ and $\eta_i = e^{-\gamma_{\text{loss}}^{(i)}t}$ are the signal and idler transmission efficiencies, $\bar{n}_{\text{th}}^{(m)}$ are the mean thermal photon numbers of the local baths, and
+\begin{equation}\label{eq:total_dephasing}
+\gamma_{\varphi}^{(\text{tot})} = \gamma_{\varphi}^{(s)} + \gamma_{\varphi}^{(i)} + 2\gamma_{\text{cross}}
+\end{equation}
+is the total effective dephasing rate including cross-mode contributions.
+\end{proposition}
+
+\begin{remark}[Where the target reflectivity enters]\label{rem:kappa}
+The target interaction $\hat R(\kappa)$ of Definition~\ref{def:qvr_channel} is itself a beamsplitter-type coupling of the signal mode to an auxiliary vacuum mode representing the fraction $(1-\kappa)$ of the field that is not returned by the target (scattered away or absorbed). This acts on the signal covariance block identically to an additional loss element, so its effect is absorbed by replacing the round-trip transmissivity $\eta_s$ with the combined \emph{target-and-channel} transmissivity
+\begin{equation}\label{eq:kappa_transmissivity}
+\tilde\eta_s \;=\; \kappa\,\eta_s
+\end{equation}
+in~(\ref{eq:output_covariance}) under $H_1$ (target present); under $H_0$ (target absent), $\kappa=0$ and the returned signal carries no coherent component, $\rho_{\text{si}}^{(0)}=\rho_{\text{noise}}\otimes\rho_i^{(\text{out})}$ as in~(\ref{eq:hypotheses}). All occurrences of $\eta_s$ in the covariance matrix~(\ref{eq:output_covariance}) and in the fidelity and QFIM expressions that follow are understood to be $\tilde\eta_s=\kappa\eta_s$ whenever the $\kappa$-dependence is displayed explicitly.
+\end{remark}
+
+The residual entanglement of the output state, quantified by logarithmic negativity, is
+\begin{equation}\label{eq:residual_entanglement}
+E_N^{(\text{out})} = \max\left[0, r - \frac{1}{2}\left(\gamma_{\text{loss}}^{(s)} + \gamma_{\text{loss}}^{(i)}\right)t - \gamma_{\varphi}^{(\text{tot})}t\right],
+\end{equation}
+demonstrating the exponential decay of entanglement with propagation time, consistent with the results of~\cite{karsa2024quantum}.
+
+
+\section{Photon Fidelity as the Central Detection Metric}\label{sec:fidelity}
+
+\subsection{From Holevo Capacity to Uhlmann Fidelity}
+
+In the fibre-optic Cq channel framework~\cite{gautum2024rigorous}, the performance metric is the Holevo capacity~$C(\theta)$---the maximum classical information rate achievable through the quantum channel. For quantum radar, the communication-theoretic metric is replaced by a \textit{detection-theoretic} metric based on state fidelity. We must be precise about which fidelity is meant, since two \emph{a priori} different objects are potentially of interest here, and conflating them (as an earlier version of this section did) produces an inconsistency: (a) the fidelity between the two \emph{reduced, single-mode} states of signal and idler, and (b) the fidelity between the full \emph{joint, two-mode} output state and a two-mode reference state. These carry different physical content, and only one of them is useful for our purposes.
+
+If one discards the idler mode's correlations with the signal, as in~(a), then $\rho_{\text{return}}=\Tr_i[\rho_{si}^{(\text{out})}]$ and $\rho_{\text{ref}}=\Tr_s[\rho_{si}^{(\text{out})}]$ are each individually \emph{thermal} states (the single-mode marginal of a TMSV state, possibly noise-degraded, is a thermal state for any~$r$), so $\mathcal F(\rho_{\text{return}},\rho_{\text{ref}})$ depends only on the two marginal mean photon numbers and is by construction \emph{blind to the signal-idler entanglement} that the joint-detection receiver is designed to exploit -- correctly identified in review as a fatal defect of that formulation, since it would render the metric physically vacuous for a quantum-illumination-type receiver. We therefore do not use this reduced-state object anywhere in what follows.
+
+\begin{definition}[Uhlmann Photon Fidelity]\label{def:uhlmann}
+Let $\rho_{si}^{(\text{out})}$ be the full bipartite (signal-idler) output state~(\ref{eq:output_state}) after the round trip and storage, and let
+\begin{equation}
+\rho_{si}^{(\text{ref})} = \hat{S}(r)|0\rangle_{si}\langle 0|\hat{S}^\dagger(r)
+\end{equation}
+be the \emph{ideal} two-mode reference state -- the noiseless TMSV state that would result from a perfectly reflecting, noiseless round trip ($\kappa=1$, $\gamma_{\text{loss}}^{(s)}=\gamma_\varphi^{(s)}=\gamma_{\text{loss}}^{(i)}=\gamma_\varphi^{(i)}=0$). The \emph{Uhlmann photon fidelity} is the joint two-mode Uhlmann fidelity between these bipartite states,
+\begin{equation}\label{eq:uhlmann_fidelity}
+\mathcal{F}\!\left(\rho_{si}^{(\text{out})}, \rho_{si}^{(\text{ref})}\right) = \left(\Tr\sqrt{\sqrt{\rho_{si}^{(\text{out})}}\,\rho_{si}^{(\text{ref})}\,\sqrt{\rho_{si}^{(\text{out})}}}\right)^2.
+\end{equation}
+Because this is a fidelity between \emph{joint} states rather than reduced marginals, it depends on the full covariance matrix~(\ref{eq:output_covariance}), including its off-diagonal (correlation) blocks, and hence is sensitive to how much of the original signal-idler entanglement (and, through $\kappa$, the round-trip interaction with the target) survives in the returned pair. For the Gaussian states of interest here, this reduces to the multimode Gaussian-state fidelity formula of Banchi, Braunstein, and Pirandola~\cite{banchi2015quantum}, of which the two-mode formula~(\ref{eq:fidelity_closed}) below is a special case.
+\end{definition}
+
+With this correction, $\rho_{\text{return}}$ and $\rho_{\text{ref}}$ no longer denote single-mode marginals anywhere in the remainder of the paper; the subscripts ``return'' and ``ref'' are retained only as shorthand labels for $\rho_{si}^{(\text{out})}$ and $\rho_{si}^{(\text{ref})}$ respectively, i.e.\ $\mathcal F(\rho_{\text{return}},\rho_{\text{ref}}) \equiv \mathcal F(\rho_{si}^{(\text{out})},\rho_{si}^{(\text{ref})})$.
+
+\subsection{Closed-Form Fidelity for the Dual-Arm Channel}
+
+\begin{theorem}[Photon Fidelity for QVR]\label{thm:fidelity}
+For the TMSV input state~(\ref{eq:tmsv_state}) subject to the dual-arm GKSL channel with output covariance matrix~$\mathbf{V}^{(\text{out})}$ given by~(\ref{eq:output_covariance}) (with $\eta_s\to\tilde\eta_s=\kappa\eta_s$ per Remark~\ref{rem:kappa}), the Uhlmann photon fidelity of Definition~\ref{def:uhlmann} is
+\begin{equation}\label{eq:fidelity_closed}
+\mathcal{F}(\kappa, L, r) = \frac{1}{\sqrt{\det\!\big(\mathbf{S}(-r)\,\mathbf{V}^{(\text{out})}\,\mathbf{S}(-r)^{T} + \tfrac{1}{2}\mathbf{I}_4\big)}},
+\end{equation}
+where $\mathbf{S}(r)$ is the $4\times 4$ symplectic matrix representing the two-mode squeezer $\hat S(r)$ in quadrature ordering $(\hat q_s,\hat p_s,\hat q_i,\hat p_i)$,
+\begin{equation}
+\mathbf{S}(r)=\begin{pmatrix}\cosh r\,\mathbf I_2 & \sinh r\,\boldsymbol\sigma_z \\ \sinh r\,\boldsymbol\sigma_z & \cosh r\,\mathbf I_2\end{pmatrix},
+\end{equation}
+which satisfies $\mathbf S(r)(\tfrac12\mathbf I_4)\mathbf S(r)^T = \mathbf V_{\text{TMSV}}$ of~(\ref{eq:tmsv_covariance}). In the weak-noise regime ($1-\tilde\eta_s,1-\eta_i,\gamma_\varphi^{(\text{tot})}t\ll1$) this reduces, to leading order, to
+\begin{equation}\label{eq:fidelity_asymptotic}
+\begin{aligned}
+\mathcal{F}(\kappa, L, r) \approx {}& 1 - \tfrac12\big[(1-\kappa\eta_s)+(1-\eta_i)\big]\cosh 2r \\
+&- \gamma_\varphi^{(\text{tot})}t\,\sinh 2r + O(\varepsilon^2),
+\end{aligned}
+\end{equation}
+where $\varepsilon$ collectively denotes $(1-\kappa\eta_s)$, $(1-\eta_i)$, and $\gamma_\varphi^{(\text{tot})}t$.
+\end{theorem}
+
+\begin{proof}
+Since $\rho_{si}^{(\text{ref})}=|\psi_{\text{TMSV}}\rangle\langle\psi_{\text{TMSV}}|$ is \emph{pure}, the Uhlmann fidelity collapses to the simple overlap $\mathcal F(\rho,|\psi\rangle\langle\psi|)=\langle\psi|\rho|\psi\rangle$: writing $\sigma=|\psi\rangle\langle\psi|$, $\sqrt\sigma=\sigma$, so $\sqrt{\sqrt\rho\,\sigma\,\sqrt\rho}$ is a rank-one operator of trace $\langle\psi|\rho|\psi\rangle$, whose square root has trace $\sqrt{\langle\psi|\rho|\psi\rangle}$; squaring per Definition~\ref{def:uhlmann} gives $\mathcal F=\langle\psi|\rho|\psi\rangle$ exactly, with no optimisation or square-root of a matrix required. Using $|\psi_{\text{TMSV}}\rangle=\hat S(r)|0\rangle_{si}$,
+\begin{equation}
+\mathcal F = \langle 0|\hat S^\dagger(r)\,\rho_{si}^{(\text{out})}\,\hat S(r)|0\rangle = \langle 0|\rho'|0\rangle,
+\end{equation}
+where $\rho' = \hat S^\dagger(r)\rho_{si}^{(\text{out})}\hat S(r)$ is the Gaussian state obtained by ``de-squeezing'' the output; being the unitary conjugate of a zero-mean Gaussian state by a Gaussian unitary, $\rho'$ is itself zero-mean Gaussian with covariance $\mathbf V' = \mathbf S(-r)\mathbf V^{(\text{out})}\mathbf S(-r)^T$. The overlap of a zero-mean Gaussian state with the vacuum is the standard result $\langle 0|\rho'|0\rangle = 1/\sqrt{\det(\mathbf V'+\tfrac12\mathbf I_4)}$~\cite{weedbrook2012gaussian}, giving~(\ref{eq:fidelity_closed}). Because $\mathbf S(-r)$ mixes the diagonal and off-diagonal $2\times2$ blocks of $\mathbf V^{(\text{out})}$ into $\mathbf V'$, the resulting fidelity depends on \emph{all} entries of $\mathbf V^{(\text{out})}$ -- including the signal-idler correlation block that carries the surviving entanglement -- consistent with $\mathcal F$ being a joint-state fidelity (Definition~\ref{def:uhlmann}) rather than a fidelity of reduced marginals. Expanding $\mathbf V^{(\text{out})} = \mathbf V_{\text{TMSV}} + \Delta\mathbf V$ to first order in the excess noise $\Delta\mathbf V$ (parametrised by $1-\kappa\eta_s$, $1-\eta_i$, and $\gamma_\varphi^{(\text{tot})}t$) and using $\mathbf S(-r)\mathbf V_{\text{TMSV}}\mathbf S(-r)^T=\tfrac12\mathbf I_4$ gives $\det(\mathbf V'+\tfrac12\mathbf I_4)=\det(\mathbf I_4+\mathbf S(-r)\Delta\mathbf V\,\mathbf S(-r)^T)\approx 1+\Tr[\mathbf S(-r)\Delta\mathbf V\,\mathbf S(-r)^T]$, and evaluating the trace against the explicit form of $\Delta \mathbf V$ yields~(\ref{eq:fidelity_asymptotic}) after the $1/\sqrt{1+x}\approx 1-x/2$ expansion.
+\end{proof}
+
+The fidelity depends on the target reflectivity~$\kappa$ through $\tilde\eta_s=\kappa\eta_s$ (Remark~\ref{rem:kappa}): when the target is present with $\kappa>0$, $\mathcal F$ is close to unity for a low-loss, low-decoherence round trip, while under $H_0$ ($\kappa=0$) the returned signal carries no coherent overlap with the ideal reference and $\mathcal F$ is small (of order the vacuum-TMSV overlap). This $\kappa$-dependent separation between $\mathcal F$ under $H_0$ and $H_1$ is what Section~\ref{sec:fidelity}.B below uses as the discrimination basis for the detection decision -- via a fidelity between the two \emph{hypothesis} states, which we now define and which is a distinct quantity from $\mathcal F(\rho_{si}^{(\text{out})},\rho_{si}^{(\text{ref})})$ of Definition~\ref{def:uhlmann}.
+
+\subsection{Neyman-Pearson Detection Threshold}
+
+\begin{definition}[Detection Hypotheses]\label{def:hypotheses}
+The quantum radar detection problem is the binary hypothesis test:
+\begin{equation}\label{eq:hypotheses}
+\begin{aligned}
+H_0 &: \text{Target absent} \quad \Rightarrow \quad \rho_{si}^{(0)} = \rho_{\text{noise}} \otimes \rho_i^{(\text{out})}, \\
+H_1 &: \text{Target present} \quad \Rightarrow \quad \rho_{si}^{(1)} = \rho_{si}^{(\text{out})}(\kappa, \tau, \Delta\omega),
+\end{aligned}
+\end{equation}
+where $\rho_{\text{noise}}$ is the (single-mode) thermal background state occupying the signal return when no target is present, $\rho_i^{(\text{out})} = \Tr_s[\rho_{si}^{(\text{out})}]$ is the idler mode's own reduced state after its independent storage decoherence (Section~\ref{sec:dual_gksl}) -- unaffected by $\kappa$, and hence identical under $H_0$ and $H_1$ -- and $\rho_{si}^{(\text{out})}$ is the full dual-arm bipartite output state conditioned on target reflectivity~$\kappa$, round-trip delay~$\tau$, and Doppler shift~$\Delta\omega$. We stress that $\rho_i^{(\text{out})}$ here is a single-mode marginal and is \emph{not} the two-mode ideal reference state $\rho_{si}^{(\text{ref})}$ of Definition~\ref{def:uhlmann}, with which it does not share a symbol; using the latter's shorthand ``$\rho_{\text{ref}}$'' for this single-mode object in an earlier version of~(\ref{eq:hypotheses}) reintroduced, at the level of the detection-hypothesis definition, exactly the reduced-marginal/joint-state notational collision that Definition~\ref{def:uhlmann} and the surrounding discussion were revised to eliminate.
+\end{definition}
+
+We stress that the object of interest in this subsection, $\mathcal{F}_{\text{disc}} := \mathcal{F}(\rho_{si}^{(0)}, \rho_{si}^{(1)})$, is the fidelity \emph{between the two hypothesis states}, and is conceptually distinct from the reference fidelity $\mathcal{F}(\rho_{si}^{(\text{out})},\rho_{si}^{(\text{ref})})$ of Definition~\ref{def:uhlmann}: the latter measures how close the actual (noisy) return is to the ideal noiseless probe, while $\mathcal F_{\text{disc}}$ measures how distinguishable the target-present and target-absent states are from each other. Both are computable in closed form from the covariance matrices of $\rho_{si}^{(0)}$, $\rho_{si}^{(1)}$, $\rho_{si}^{(\text{ref})}$ via the same Gaussian-fidelity machinery, but they play different roles below.
+
+\begin{theorem}[Optimal Detection Threshold]\label{thm:threshold}
+For the binary hypothesis test~(\ref{eq:hypotheses}), the Neyman-Pearson optimal detector applies the Helstrom POVM $\{\Pi_0, \Pi_1\}$ with
+\begin{equation}\label{eq:np_povm}
+\Pi_1 = \{\rho_{si}^{(1)} - \lambda\rho_{si}^{(0)} \geq 0\}, \quad \Pi_0 = I - \Pi_1,
+\end{equation}
+where $\Pi_1$ projects onto the non-negative eigenspace of $\rho_{si}^{(1)}-\lambda\rho_{si}^{(0)}$ and $\lambda\geq0$ is chosen so that $\Tr[\Pi_1\rho_{si}^{(0)}] = P_{\text{FA}}=\alpha$; this test is uniformly most powerful among all POVMs satisfying the false-alarm constraint~\cite{helstrom1976quantum}. The achieved detection probability $P_D=\Tr[\Pi_1\rho_{si}^{(1)}]$ does not admit a closed form in terms of $\mathcal F_{\text{disc}}$ alone in general (it depends on the full spectrum of $\rho_{si}^{(1)}-\lambda\rho_{si}^{(0)}$), but it obeys the two-sided, fidelity-based Fuchs--van~de~Graaf bound
+\begin{equation}\label{eq:fvdg_bound}
+1-\sqrt{1-\mathcal F_{\text{disc}}} \;\leq\; P_D - P_{\text{FA}} \;\leq\; \sqrt{1-\mathcal F_{\text{disc}}^2},
+\end{equation}
+valid for \emph{any} single-shot test, since $1-\mathcal F_{\text{disc}}\leq\tfrac12\|\rho_{si}^{(1)}-\rho_{si}^{(0)}\|_1\leq\sqrt{1-\mathcal F_{\text{disc}}^2}$~\cite{fuchs1999cryptographic} and $|P_D-P_{\text{FA}}|\leq\tfrac12\|\rho_{si}^{(1)}-\rho_{si}^{(0)}\|_1$ for the optimal Helstrom test. In particular, a low discrimination fidelity ($\mathcal F_{\text{disc}}\to0$, well-separated hypotheses) is necessary for $P_D-P_{\text{FA}}$ to approach its maximal value of~1, while $\mathcal F_{\text{disc}}\to1$ forces $P_D\to P_{\text{FA}}$ (no useful discrimination) for any test.
+
+For $M$ i.i.d.\ copies of the state (repeated independent range-Doppler cells or pulses) with $P_{\text{FA}}=\alpha$ held fixed, the asymptotically optimal miss probability is governed not by $\mathcal F_{\text{disc}}$ but by the quantum Stein lemma~\cite{hiai1991proper,hayashi2017quantum},
+\begin{equation}\label{eq:stein_exponent}
+\lim_{M\to\infty} -\frac{1}{M}\ln\big(1-P_D^{(M)}\big) = D\big(\rho_{si}^{(1)}\,\|\,\rho_{si}^{(0)}\big),
+\end{equation}
+where $D(\rho\|\sigma)=\Tr[\rho(\ln\rho-\ln\sigma)]$ is the quantum relative entropy, evaluated here for two Gaussian states via the standard Gaussian relative-entropy formula~\cite{seshadreesan2018renyi}.
+\end{theorem}
+
+\begin{proof}
+Optimality of the Helstrom projector for the Neyman-Pearson problem is the standard quantum generalisation of the classical Neyman-Pearson lemma~\cite{helstrom1976quantum} and requires no assumption of equal purity. The bound~(\ref{eq:fvdg_bound}) follows from combining this optimality with the Fuchs--van~de~Graaf inequalities relating trace distance and fidelity, and does not invoke the quantum Chernoff bound at any point: the quantum Chernoff bound instead characterises the \emph{symmetric} (minimum total error, equal-prior) hypothesis-testing problem, $\min_\Pi\left(\pi_0\Tr[\Pi_1\rho_{si}^{(0)}]+\pi_1\Tr[\Pi_0\rho_{si}^{(1)}]\right)$, which is a different quantity from the asymmetric Neyman-Pearson error exponent needed here; the correct asymptotic tool for the fixed-$P_{\text{FA}}$ setting is instead the quantum Stein lemma, giving the relative-entropy exponent~(\ref{eq:stein_exponent}). An earlier version of this theorem asserted a closed-form rational expression for $\mathcal F^{*}$ in terms of $\mathcal F_{\text{disc}}$ and $P_{\text{FA}}$ alone, obtained by an implicit equal-purity identification of $\mathcal F_{\text{disc}}$ with the quantum Chernoff bound; that identification is not valid in the Neyman-Pearson (as opposed to symmetric-error) setting and the closed-form expression is withdrawn. In its place, we define the operational detection threshold $\mathcal F^{*}$ implicitly, as the value of $\mathcal F_{\text{disc}}$ at which the Fuchs--van~de~Graaf upper bound in~(\ref{eq:fvdg_bound}) equals the required detection margin $P_D-P_{\text{FA}}$ for the operating point of interest, i.e.\ $\mathcal F^{*}$ solves $\sqrt{1-(\mathcal F^{*})^2} = P_D-P_{\text{FA}}$; this yields a rigorous (if implicit) sufficient condition, $\mathcal F_{\text{disc}}\leq \mathcal F^{*}$, for the target detection margin to be achievable by \emph{some} test, rather than the (incorrect) claim of an achieved value for the specific Helstrom test.
+\end{proof}
+
+\subsection{Fidelity-QCRB Link Theorem}
+
+As correctly pointed out in review, the original statement of this theorem contained a sign error that made it self-contradictory, so we restate and re-derive it here.
+
+Consider $\mathcal F(\hat\Theta) := \mathcal F\big(\rho_{si}^{(\text{out})}(\hat\Theta), \rho_{si}^{(\text{ref})}\big)$, the reference fidelity of Definition~\ref{def:uhlmann} evaluated with the channel parameters set to the \emph{estimated} value~$\hat\Theta$ in place of the true value~$\Theta_0$ (so that $\hat\Theta=\Theta_0$ recovers the fidelity of the true channel). Since $\mathcal F(\Theta)\leq 1$ for every $\Theta$, and one verifies directly from~(\ref{eq:fidelity_closed}) that $\mathcal F(\Theta)$ attains its constrained maximum over the physical parameter range at $\Theta=\Theta_0$ (i.e.\ zero excess loss/dephasing relative to the true channel), the gradient vanishes there, $\nabla_\Theta\mathcal F(\Theta_0)=0$, and the Hessian $G_{\mu\nu}=\partial_\mu\partial_\nu\mathcal F|_{\Theta_0}$ is \emph{negative semi-definite}, exactly as noted in review. We therefore define the positive semi-definite curvature matrix $\mathbf H := -\mathbf G \succeq 0$.
+
+\begin{theorem}[Fidelity-QCRB Link]\label{thm:fidelity_qcrb}
+Let $\hat{\Theta} = (\hat{\kappa}, \hat{\tau}, \hat{\Delta\omega})$ be an unbiased estimator of the radar parameters from $M$ independent measurements. The covariance of $\hat{\Theta}$ satisfies the QCRB $\Cov(\hat{\Theta}) \succeq (M\mathbf{F})^{-1}$, where $\mathbf{F}$ is the QFIM derived in Section~\ref{sec:qfim}. To second order in the estimation error, the \emph{expected} reference fidelity is bounded \emph{above} by
+\begin{equation}\label{eq:fidelity_qcrb}
+\mathbb{E}\big[\mathcal{F}(\hat\Theta)\big] \;\leq\; 1 - \frac{1}{2}\Tr[\Cov(\hat{\Theta})\,\mathbf{H}] \;\leq\; 1 - \frac{1}{2M}\Tr[\mathbf{F}^{-1}\mathbf{H}],
+\end{equation}
+where the second inequality uses $\Cov(\hat\Theta)\succeq(M\mathbf F)^{-1}$ together with $\mathbf H\succeq0$ and the fact that $\Tr[AC]\geq\Tr[BC]$ whenever $A\succeq B\succeq0$ and $C\succeq0$.
+\end{theorem}
+
+\begin{proof}
+Expanding $\mathcal F(\hat\Theta)$ to second order about $\Theta_0$, using $\nabla\mathcal F(\Theta_0)=0$,
+\begin{equation}
+\mathcal F(\hat\Theta) = \mathcal F(\Theta_0) - \frac12(\hat\Theta-\Theta_0)^T\mathbf H(\hat\Theta-\Theta_0) + O(\|\hat\Theta-\Theta_0\|^3).
+\end{equation}
+Taking the expectation over the (unbiased) estimator distribution and using $\mathbb E[(\hat\Theta-\Theta_0)(\hat\Theta-\Theta_0)^T]=\Cov(\hat\Theta)$,
+\begin{equation}
+\mathbb E[\mathcal F(\hat\Theta)] = \mathcal F(\Theta_0) - \frac12\Tr[\Cov(\hat\Theta)\mathbf H] + O(\mathbb E[\|\hat\Theta-\Theta_0\|^3]).
+\end{equation}
+Since $\mathcal F(\Theta_0)\leq1$ and $\Tr[\Cov(\hat\Theta)\mathbf H]\geq0$ (both factors PSD), this gives the first inequality of~(\ref{eq:fidelity_qcrb}); the second follows from the QCRB and the Loewner-order trace inequality noted above.
+\end{proof}
+
+This corrected theorem states an \emph{upper} bound, not a lower bound: it shows that as the estimator's covariance shrinks toward the QCRB (i.e.\ estimation becomes maximally precise), the achievable upper bound on $\mathbb E[\mathcal F(\hat\Theta)]$ tightens toward $\mathcal F(\Theta_0)$ from above rather than guaranteeing high fidelity from below. Physically, it says that estimation \emph{error} (large $\Cov(\hat\Theta)$ along directions of high curvature $\mathbf H$) necessarily \emph{depresses} the expected fidelity below $\mathcal F(\Theta_0)$; it does \emph{not} establish that high fidelity is a necessary condition for accurate estimation, and we withdraw that earlier claim. The link between detection and estimation performance in this framework is therefore an upper bound coupling estimation error to fidelity loss, not the converse implication asserted previously.
+
+
+\section{Three-Parameter QFIM and Adaptive Estimation}\label{sec:qfim}
+
+\subsection{Symmetric Logarithmic Derivatives for Bipartite States}
+
+The fibre-optic framework derives the two-parameter QFIM for $(\bar{n}, \phi)$ under the combined loss-dephasing channel~\cite{gautum2024rigorous}. For quantum radar, the parameter vector is
+\begin{equation}\label{eq:radar_params}
+\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega),
+\end{equation}
+where:
+\begin{itemize}
+    \item $\kappa \in [0,1]$ is the target reflectivity (power reflection coefficient);
+    \item $\tau = 2L/c$ is the round-trip time delay, encoding the target range $R = c\tau/2$;
+    \item $\Delta\omega = \omega_D$ is the Doppler frequency shift from target motion.
+\end{itemize}
+
+\begin{definition}[SLD for Radar Parameters]\label{def:sld_radar}
+For the output state $\rho_{\Theta}^{(\text{out})} = \mathcal{N}_{\text{dual}}(\hat{S}(r)|0\rangle\langle 0|\hat{S}^\dagger(r))$, the symmetric logarithmic derivative $\mathcal{L}_\mu$ for parameter $\Theta_\mu \in \{\kappa, \tau, \Delta\omega\}$ is the self-adjoint solution of
+\begin{equation}\label{eq:sld_radar}
+\frac{\partial\rho_{\Theta}^{(\text{out})}}{\partial\Theta_\mu} = \frac{1}{2}\left(\rho_{\Theta}^{(\text{out})}\mathcal{L}_\mu + \mathcal{L}_\mu\rho_{\Theta}^{(\text{out})}\right).
+\end{equation}
+For the spectral decomposition $\rho_{\Theta}^{(\text{out})} = \sum_j \lambda_j |e_j\rangle\langle e_j|$, the explicit form is the standard result of quantum estimation theory~\cite{paris2009quantum,braunstein1994statistical},
+\begin{equation}\label{eq:sld_explicit}
+\mathcal{L}_\mu = \sum_{j,k: \lambda_j + \lambda_k > 0} \frac{2\langle e_j|\partial_\mu\rho_{\Theta}^{(\text{out})}|e_k\rangle}{\lambda_j + \lambda_k} |e_j\rangle\langle e_k|,
+\end{equation}
+obtained by inserting the spectral decomposition into~(\ref{eq:sld_radar}) and solving the resulting linear (Sylvester-type) equation term by term in the eigenbasis; terms with $\lambda_j+\lambda_k=0$ are excluded since the corresponding matrix element of $\partial_\mu\rho_\Theta^{(\text{out})}$ must itself vanish for a valid (trace-preserving) family $\rho_\Theta^{(\text{out})}$, by a standard argument (see~\cite{paris2009quantum}, Sec.~II).
+\end{definition}
+
+\subsection{Three-Parameter QFIM}
+
+We first fix the parametrisation of the covariance matrix so that all three derivatives are well-defined. Writing the round-trip time explicitly as the estimation variable, $\eta_s(\tau) = e^{-\bar\gamma_{\text{loss}}\tau}$ with $\bar\gamma_{\text{loss}}=\alpha_{\text{atm}}v_g\ln10/10$ the loss rate per unit round-trip time [from~(\ref{eq:atm_loss_rate})], and $\gamma_\varphi^{(s)}(\tau)$ from~(\ref{eq:atm_phase_rate}) with $L=v_g\tau/2$ -- so that $\gamma_\varphi^{(s)}(\tau) = B\,\tau^{5/6}$ for a $\tau$-independent constant $B$ set by $C_n^2,k,v_g$ -- and modelling the Doppler shift as a coherent phase rotation of the correlation block accumulated over the round trip, $e^{i\Delta\omega\tau}$, replacing $e^{-\gamma_\varphi^{(\text{tot})}t}\boldsymbol\sigma_z \to e^{-\gamma_\varphi^{(\text{tot})}\tau}\big(\cos(\Delta\omega\tau)\boldsymbol\sigma_z+\sin(\Delta\omega\tau)\boldsymbol\sigma_x\big)$ in~(\ref{eq:output_covariance}), with $\eta_s\to\tilde\eta_s=\kappa\eta_s(\tau)$ per Remark~\ref{rem:kappa}. Crucially, since the idler storage duration is $t_{\text{wait}}=2L/c\equiv\tau$ by definition (Definition~\ref{def:qvr_channel}), the idler-arm quantities are \emph{equally} functions of $\tau$: $\eta_i(\tau)=e^{-\gamma_{\text{mem,loss}}\tau}$, with $\gamma_{\text{mem,loss}}$ itself $\tau$-independent (a fixed memory decoherence rate, unlike the propagation-distance-dependent $\gamma_\varphi^{(s)}(\tau)$). An earlier version of the derivative structure below held $\eta_i$ and the $\tau$-scaling of $\gamma_\varphi^{(s)}$ fixed when differentiating with respect to $\tau$; both are genuine, same-order sources of $\tau$-dependence and are included in Lemma~\ref{lem:derivative_structure} below. This makes $\mathbf V^{(\text{out})}(\kappa,\tau,\Delta\omega)$ an explicit, differentiable function of all three parameters, which the original derivation left implicit -- a gap correctly identified in review, since a QFIM cannot be computed without such a parametrisation.
+
+\begin{lemma}[Structure of the parameter derivatives]\label{lem:derivative_structure}
+At leading order in the weak-noise expansion of Theorem~\ref{thm:fidelity} (i.e.\ $1-\kappa\eta_s,\ 1-\eta_i,\ \gamma_\varphi^{(\text{tot})}\tau\ll1$), define the two rate combinations
+\begin{equation}\label{eq:effective_rates}
+\begin{gathered}
+\bar\gamma_A := \tfrac12\big(\bar\gamma_{\text{loss}}+\gamma_{\text{mem,loss}}\big), \\
+\tilde\gamma_\varphi^{(\text{tot})}(\tau) := \tfrac{11}{6}\gamma_\varphi^{(s)}(\tau)+\gamma_\varphi^{(i)}+2\gamma_{\text{cross}},
+\end{gathered}
+\end{equation}
+the latter arising from $\tfrac{\mathrm d}{\mathrm d\tau}\big[\gamma_\varphi^{(\text{tot})}(\tau)\tau\big] = \gamma_\varphi^{(s)}(\tau)+\tau\,\mathrm d\gamma_\varphi^{(s)}/\mathrm d\tau+\gamma_\varphi^{(i)}+2\gamma_{\text{cross}} = \tfrac{11}{6}\gamma_\varphi^{(s)}(\tau)+\gamma_\varphi^{(i)}+2\gamma_{\text{cross}}$ since $\gamma_\varphi^{(s)}(\tau)\propto\tau^{5/6}$. The derivatives of $\mathbf V^{(\text{out})}$ then satisfy
+\begin{align}
+\partial_\kappa \mathbf V^{(\text{out})} &= \eta_s\Big(\cosh2r-\bar n_{\text{th}}^{(s)}-\tfrac12\Big)\,\mathbf E_{ss} \notag\\
+&\quad + \tfrac12\eta_s\sqrt{\tfrac{\eta_i}{\kappa\eta_s}}\sinh2r\,\boldsymbol\sigma_z\otimes\mathbf E_{si} + O(\varepsilon),\\
+\partial_\tau \mathbf V^{(\text{out})} &= -\bar\gamma_{\text{loss}}\kappa\eta_s\Big(\cosh2r-\bar n_{\text{th}}^{(s)}-\tfrac12\Big)\,\mathbf E_{ss} \notag\\
+&\quad -\gamma_{\text{mem,loss}}\eta_i\Big(\cosh2r-\bar n_{\text{th}}^{(i)}-\tfrac12\Big)\,\mathbf E_{ii} \notag\\
+&\quad -\big[\bar\gamma_A+\tilde\gamma_\varphi^{(\text{tot})}(\tau)\big]\sqrt{\kappa\eta_s\eta_i}\sinh2r\,\boldsymbol\sigma_z\otimes\mathbf E_{si}\notag\\
+&\quad +O(\varepsilon),\\
+\partial_{\Delta\omega}\mathbf V^{(\text{out})} &= \tau\sqrt{\kappa\eta_s\eta_i}\sinh2r\,\boldsymbol\sigma_x\otimes\mathbf E_{si}+O(\varepsilon\tau),
+\end{align}
+where $\mathbf E_{ss}$, $\mathbf E_{ii}$, $\mathbf E_{si}$ denote the signal-diagonal, idler-diagonal, and off-diagonal (correlation-block) placement, respectively, and $\varepsilon$ collects the weak-noise parameters. The two new terms relative to an earlier version of this lemma -- the $\mathbf E_{ii}$ idler-diagonal piece, from $\eta_i(\tau)=e^{-\gamma_{\text{mem,loss}}\tau}$ (since $t_{\text{wait}}=\tau$), and the replacement $\gamma_\varphi^{(\text{tot})}\to\bar\gamma_A+\tilde\gamma_\varphi^{(\text{tot})}(\tau)$ in the correlation-block coefficient, from differentiating the amplitude prefactor $\sqrt{\kappa\eta_s(\tau)\eta_i(\tau)}$ and the implicit $\tau$-dependence of $\gamma_\varphi^{(s)}(\tau)$ itself -- are each the same parametric order ($O(\varepsilon)$, not $O(\varepsilon^2)$) as the terms already retained, and neither introduces a $\boldsymbol\sigma_x$ component: both remain proportional to $\mathbf E_{ss}$/$\mathbf E_{ii}$ (parity-even, diagonal) or $\boldsymbol\sigma_z\otimes\mathbf E_{si}$ (the same polarisation as the term already present), so the $\boldsymbol\sigma_z$/$\boldsymbol\sigma_x$ parity argument used below to establish the block-diagonal QFIM structure is unaffected. Crucially, $\partial_{\Delta\omega}\mathbf V^{(\text{out})}$ is proportional to $\boldsymbol\sigma_x$ while $\partial_\kappa\mathbf V^{(\text{out})}$ and $\partial_\tau\mathbf V^{(\text{out})}$ are proportional to $\boldsymbol\sigma_z$ (plus diagonal pieces) in the correlation block, and $\Tr[\boldsymbol\sigma_z\boldsymbol\sigma(\mathbf V)\boldsymbol\sigma_x\boldsymbol\sigma(\mathbf V)]=0$ whenever $\boldsymbol\sigma(\mathbf V)$ itself is diagonal in the $\{\boldsymbol\sigma_z,\mathbf I\}$ basis at $\Delta\omega=0$ (i.e.\ evaluated at the operating point with the Doppler phase referenced to zero, which we may always choose by definition of $\Delta\omega$) -- a standard consequence of the $\{\mathbf I,\boldsymbol\sigma_x,\boldsymbol\sigma_y,\boldsymbol\sigma_z\}$ Pauli-trace orthogonality relations.
+\end{lemma}
+
+\begin{theorem}[QFIM for Radar Parameters]\label{thm:qfim_radar}
+Applying the Gaussian-state QFIM formula for zero-mean states~\cite{safranek2019estimation,monras2013phase},
+\begin{equation}\label{eq:gaussian_qfim_exact}
+F_{\mu\nu} = \frac12\,\mathrm{vec}[\partial_\mu\mathbf V]^{T}\big(\mathbf V\otimes\mathbf V+\tfrac14\boldsymbol\Omega\otimes\boldsymbol\Omega\big)^{-1}\mathrm{vec}[\partial_\nu\mathbf V],
+\end{equation}
+to the derivatives of Lemma~\ref{lem:derivative_structure}, and using the $\boldsymbol\sigma_z$/$\boldsymbol\sigma_x$ orthogonality noted there, the QFIM for $\Theta_{\text{rad}}=(\kappa,\tau,\Delta\omega)$ is block-diagonal to leading order in the weak-noise, high-squeezing expansion,
+\begin{equation}\label{eq:qfim_radar}
+\mathbf{F}(\Theta_{\text{rad}}) = \begin{pmatrix}
+F_{\kappa\kappa} & 0 & 0 \\
+0 & F_{\tau\tau} & F_{\tau,\Delta\omega} \\
+0 & F_{\Delta\omega,\tau} & F_{\Delta\omega,\Delta\omega}
+\end{pmatrix} + O(\varepsilon),
+\end{equation}
+with, to leading order in $\sinh^2 2r$ and in the weak-noise parameters,
+\begin{align}
+F_{\kappa\kappa} &\approx \frac{\eta_s^2\sinh^2 2r}{4\kappa^2\big(1+2\bar n_{\text{th}}^{(s)}\big)}, \label{eq:f_kappa}\\
+F_{\tau\tau} &\approx \frac{\bar\gamma_{\text{loss}}^2\kappa^2\eta_s^2\sinh^2 2r}{1+2\bar n_{\text{th}}^{(s)}} \notag\\
+&\quad+\frac{2\big[\bar\gamma_A+\tilde\gamma_\varphi^{(\text{tot})}(\tau)\big]^2\kappa\eta_s\eta_i\sinh^2 2r}{1+2\bar n_{\text{th}}^{(s)}}, \label{eq:f_tau}\\
+F_{\Delta\omega,\Delta\omega} &\approx \frac{2\tau^2\kappa\eta_s\eta_i\sinh^2 2r}{1+2\bar n_{\text{th}}^{(s)}}, \label{eq:f_doppler}\\
+F_{\tau,\Delta\omega}&=F_{\Delta\omega,\tau}\approx0 \label{eq:f_cross}
+\end{align}
+to the order retained here, since $\partial_\tau\mathbf V^{(\text{out})}$'s correlation-block piece is $\boldsymbol\sigma_z$-polarised while $\partial_{\Delta\omega}\mathbf V^{(\text{out})}$'s is $\boldsymbol\sigma_x$-polarised, and the leading-order overlap between them vanishes by the same orthogonality argument as for $F_{\kappa\tau}$; a nonzero $\tau$--$\Delta\omega$ coupling, of the standard radar-ambiguity type, reappears at the next order in $\gamma_\varphi^{(\text{tot})}\tau$, which we do not display in closed form here.
+\end{theorem}
+
+\begin{proof}
+Equation~(\ref{eq:gaussian_qfim_exact}) is the general zero-mean Gaussian-state QFIM formula of~\cite{safranek2019estimation} (equivalent, for the purity ranges considered here, to the symplectic-eigenvalue form used in~\cite{monras2013phase}); no further assumption beyond zero displacement is needed for its validity, so it applies directly to $\rho_\Theta^{(\text{out})}$ without the additional near-pure-state approximation implicit in the earlier draft's formula. Substituting the derivatives of Lemma~\ref{lem:derivative_structure} and using $\Tr[\mathbf E_{si}\boldsymbol\sigma_z \cdot \mathbf E_{si}\boldsymbol\sigma_x]\propto\Tr[\boldsymbol\sigma_z\boldsymbol\sigma_x]=0$ (Pauli trace orthogonality) inside the quadratic form~(\ref{eq:gaussian_qfim_exact}) -- valid because $\mathbf V\otimes\mathbf V+\tfrac14\boldsymbol\Omega\otimes\boldsymbol\Omega$ is, at the reference operating point $\Delta\omega=0$, invariant under the same $\boldsymbol\sigma_z$-parity that distinguishes the $\kappa,\tau$ derivatives from the $\Delta\omega$ derivative -- gives the vanishing of $F_{\kappa\tau}$, $F_{\kappa,\Delta\omega}$, and (to leading order) $F_{\tau,\Delta\omega}$ claimed above. The diagonal entries follow from direct substitution of the diagonal and $\boldsymbol\sigma_z$/$\boldsymbol\sigma_x$-block pieces of each derivative into~(\ref{eq:gaussian_qfim_exact}) and retaining the leading $\sinh^2 2r$ terms.
+
+We emphasise, in response to review, that this block-diagonal structure is now established by an explicit symmetry (parity) argument on the derivative structure, rather than by the earlier purely verbal claim that ``reflectivity affects amplitude while delay and Doppler affect phase''; it holds to the order displayed, with corrections entering at $O(\varepsilon)$ relative to the leading terms.
+
+We also note, following the correction to Lemma~\ref{lem:derivative_structure}, that $F_{\tau\tau}$ in~(\ref{eq:f_tau}) replaces the bare $\gamma_\varphi^{(\text{tot})}$ of an earlier draft with the corrected rate combination $\bar\gamma_A+\tilde\gamma_\varphi^{(\text{tot})}(\tau)$ of~(\ref{eq:effective_rates}), by the same substitution pattern used to obtain the original expression (squaring the correlation-block coefficient of $\partial_\tau\mathbf V^{(\text{out})}$ inside the quadratic form~(\ref{eq:gaussian_qfim_exact})). The new $\mathbf E_{ii}$ (idler-diagonal) term in $\partial_\tau\mathbf V^{(\text{out})}$ does not appear in~(\ref{eq:f_tau}) at the displayed order: it contributes to~(\ref{eq:gaussian_qfim_exact}) only through diagonal-block ($\mathbf E_{ii}$--$\mathbf E_{ii}$ and $\mathbf E_{ii}$--$\mathbf E_{ss}$) terms that scale as $O(1)$ in $r$, whereas the retained terms scale as $\sinh^2 2r$; it is therefore sub-leading in the same high-squeezing expansion already used to obtain~(\ref{eq:f_kappa})--(\ref{eq:f_doppler}), though it would need to be reinstated for a fully non-asymptotic (finite-$r$) evaluation.
+\end{proof}
+
+\subsection{Classical Coherent-State Benchmark}
+
+A quantitative ``quantum advantage'' claim requires the QFIM of the classical benchmark under the \emph{same} channel and the \emph{same} mean transmitted photon number $\bar n=\sinh^2 r$. For a coherent-state probe $|\alpha\rangle$, $|\alpha|^2=\bar n$, with no idler mode retained (the classical strategy has no entanglement resource to store), the signal alone propagates through the identical round-trip channel (amplitude damping $\tilde\eta_s=\kappa\eta_s(\tau)$, dephasing $\gamma_\varphi^{(s)}(\tau)$) and is measured by an optimal (heterodyne/homodyne, parameter-dependent) receiver. The single-mode Gaussian QFIM for a displaced thermal/coherent state with mean $\boldsymbol d(\Theta)=\sqrt{2\tilde\eta_s}\,(\Re\alpha,\Im\alpha)$ and covariance $\mathbf V_s=\tfrac12\mathbf I_2$ (coherent state remains pure and minimum-uncertainty under pure loss, in the ideal-receiver sense) is dominated, for zero-mean-preserving parameters, by the displacement term
+\begin{equation}\label{eq:classical_qfim_recipe}
+F_{\mu\nu}^{(d)}=(\partial_\mu\boldsymbol d)^T\mathbf V_s^{-1}(\partial_\nu\boldsymbol d)
+\end{equation}
+(the standard zero-mean Gaussian displacement-QFI recipe~\cite{safranek2019estimation,braunstein1994statistical}; an earlier version of this expression carried a spurious leading factor of $2$, which would double every entry below and, in particular, over-count the textbook coherent-state phase-estimation result $F_{\theta\theta}=4\bar n$ for $\alpha=\sqrt{\bar n}e^{i\theta}$ by a factor of 2), giving
+\begin{align}
+F^{\text{(cl)}}_{\kappa\kappa}&\approx\frac{\eta_s(\tau)\,\bar n}{\kappa}, \label{eq:qfim_classical_kappa}\\
+F^{\text{(cl)}}_{\tau\tau}&\approx \bar\gamma_{\text{loss}}^2\,\kappa\,\eta_s(\tau)\,\bar n, \label{eq:qfim_classical_tau}\\
+F^{\text{(cl)}}_{\Delta\omega,\Delta\omega}&\approx 4\,\kappa\,\eta_s(\tau)\,\bar n\,\tau^2, \label{eq:qfim_classical_doppler}
+\end{align}
+where~(\ref{eq:qfim_classical_kappa}) and~(\ref{eq:qfim_classical_tau}) follow from $\alpha(\Theta)$ varying only in \emph{magnitude} (so $F_{\mu\mu}=4(\partial_\mu|\alpha|)^2$ with no geometric-phase subtraction needed), while~(\ref{eq:qfim_classical_doppler}) follows from the \emph{phase} dependence $\alpha(\Delta\omega)=\sqrt{\kappa\eta_s\bar n}\,e^{i\Delta\omega\tau}$ specified in Section~\ref{sec:qfim}.B, for which $F_{\Delta\omega,\Delta\omega}=(\partial_{\Delta\omega}\theta)^2\cdot4\kappa\eta_s\bar n=4\kappa\eta_s(\tau)\bar n\tau^2$ with $\theta=\Delta\omega\tau$ -- an earlier version of~(\ref{eq:qfim_classical_doppler}) reported half this value, inconsistent with~(\ref{eq:qfim_classical_kappa})--(\ref{eq:qfim_classical_tau}) under the single recipe~(\ref{eq:classical_qfim_recipe}). i.e.\ every entry of the classical QFIM scales \emph{linearly} in $\bar n$ (the standard quantum limit), in contrast with the $\sinh^2 2r\approx 4\bar n^2$ quadratic scaling that appears in~(\ref{eq:f_kappa})--(\ref{eq:f_doppler}) for the \emph{idealised, noiseless} ($\eta_s,\eta_i\to1$) TMSV probe. This is the coherent-state benchmark that Reviewer~1 correctly noted was missing from the numerical comparison of Section~\ref{sec:numerical}.B, and~(\ref{eq:qfim_classical_kappa}--\ref{eq:qfim_classical_doppler}) is what the reported dB improvements in that section are measured against.
+
+\subsection{Physical Interpretation, and a Correction to the Scaling Claim}
+
+The block-diagonal structure of~(\ref{eq:qfim_radar}), to the order established in Theorem~\ref{thm:qfim_radar}, has the following consequences.
+
+\textbf{Reflectivity-phase decoupling.} The vanishing of $F_{\kappa\tau}$ and $F_{\kappa,\Delta\omega}$ at leading order means that target reflectivity and kinematic parameters (range, velocity) can be estimated with reduced cross-talk at the quantum limit, an approximate decoupling rather than an exact one once sub-leading terms in $\varepsilon$ are retained.
+
+\textbf{Delay-Doppler coupling.} A non-zero off-diagonal $F_{\tau,\Delta\omega}$, entering at sub-leading order in $\gamma_\varphi^{(\text{tot})}\tau$, encodes the familiar radar ambiguity between range and velocity.
+
+\textbf{Scaling: a necessary correction.} The earlier draft claimed that all QFIM entries retain $\sinh^2 2r\approx4\bar n^2$ (quadratic-in-$\bar n$, ``Heisenberg-like'') scaling and described this as ``the characteristic Heisenberg scaling of quantum illumination.'' As correctly pointed out in review, this is not consistent with the established literature on quantum illumination and quantum-enhanced sensing in the presence of loss and thermal noise~\cite{nair2020quantum,tan2008quantum}: for \emph{any} fixed nonzero loss ($\tilde\eta_s<1$) and thermal background ($\bar n_{\text{th}}^{(s)}>0$), the exact QFIM entries~(\ref{eq:gaussian_qfim_exact}) do not grow as $\bar n^2$ unboundedly as $r\to\infty$; rather, because $\eta_s,\eta_i<1$ act multiplicatively on the correlation block while the thermal/vacuum diagonal terms grow additively, the ratio $F^{\text{TMSV}}_{\mu\mu}/F^{\text{(cl)}}_{\mu\mu}$ approaches a \emph{finite, loss-limited constant} as $\bar n\to\infty$ at fixed $\eta_s,\eta_i,\bar n_{\text{th}}^{(s)}$, rather than diverging -- this is precisely the well-known ``entanglement advantage without entanglement'' regime described in Section~\ref{sec:intro}, in which quantum illumination provides a bounded (typically $O(1)$--$O(10)$, few-dB) advantage over the coherent-state benchmark at fixed loss and noise, not an unbounded quadratic advantage. The quadratic $4\bar n^2$ scaling in~(\ref{eq:f_kappa})--(\ref{eq:f_doppler}) is therefore correctly understood only as the \emph{ideal, noiseless-channel} ($\eta_s,\eta_i\to1$) limit of the QFIM, useful as an upper bound on the achievable advantage, and \emph{not} as a claim that the noisy dual-arm-channel estimator of this paper attains Heisenberg scaling. We correct the abstract, Section~V.C, and the numerical-simulation discussion of Section~\ref{sec:numerical} accordingly: the improvements reported there (Section~\ref{sec:numerical}.B) should be read as finite, loss-limited dB gains relative to the coherent-state benchmark~(\ref{eq:qfim_classical_kappa}--\ref{eq:qfim_classical_doppler}) at the specific operating point of Table~\ref{tab:sim_params}, not as evidence of asymptotic Heisenberg scaling.
+
+\subsection{Adaptive Sequential Estimation Protocol}
+
+Attainability of the multiparameter SLD-QCRB is, in general, a strictly stronger requirement than local asymptotic normality (LAN) alone provides: LAN for quantum statistical models establishes asymptotic attainability of the \emph{Holevo} Cramér-Rao bound (via collective measurements on $M$ copies), which coincides with the SLD bound $\mathbf F^{-1}$ only when an additional \emph{compatibility} condition holds. As correctly raised in review, the weak-commutativity condition of Ragy, Jarzyna, and Demkowicz-Dobrza\'nski~\cite{ragy2016compatibility},
+\begin{equation}\label{eq:weak_commutativity}
+\Tr\!\big[\rho_\Theta^{(\text{out})}\,[\mathcal{L}_\mu,\mathcal{L}_\nu]\big] = 0 \qquad \forall\,\mu,\nu\in\{\kappa,\tau,\Delta\omega\},
+\end{equation}
+must hold (or the parameters must be estimated by separate optimal single-parameter measurements, at the cost of a $\sqrt{3}$-type constant-factor loss) for a \emph{single} adaptive POVM sequence to saturate the \emph{full} SLD-QCRB matrix $\mathbf F^{-1}$ simultaneously in all three parameters; this was neither stated nor verified in the original manuscript.
+
+\begin{proposition}[Weak Commutativity for the Gaussian QVR Model]\label{prop:weak_comm}
+For zero-mean Gaussian states, the weak-commutativity condition~(\ref{eq:weak_commutativity}) is equivalent to the symplectic-form condition $\Tr\!\big[\boldsymbol\Omega\,\partial_\mu\mathbf V\,\boldsymbol\Omega\,\partial_\nu\mathbf V\big]=0$ for all $\mu,\nu$~\cite{ragy2016compatibility,nichols2018multiparameter}. Using the derivative structure of Lemma~\ref{lem:derivative_structure}, this trace vanishes at leading order for every pair in $\{\kappa,\tau,\Delta\omega\}$ by the same $\boldsymbol\sigma_z$/$\boldsymbol\sigma_x$ parity argument used in the proof of Theorem~\ref{thm:qfim_radar}, so~(\ref{eq:weak_commutativity}) holds to the order considered there.
+\end{proposition}
+
+\begin{theorem}[Achievability of the Radar QCRB]\label{thm:achievability}
+Given Proposition~\ref{prop:weak_comm}, there exists an adaptive sequential measurement strategy, using a distinct locally-optimal SLD-adaptive POVM at each step, such that
+\begin{equation}\label{eq:achievability}
+\lim_{M\to\infty} M \cdot \Cov(\hat{\Theta}_M) = \mathbf{F}(\Theta_{\text{rad}})^{-1},
+\end{equation}
+to the leading order at which weak commutativity has been established.
+\end{theorem}
+
+\begin{proof}
+Given weak commutativity, LAN for quantum Gaussian statistical models~\cite{gill2013asymptotic,guta2006local} guarantees that the sequence of local models around any $\Theta$ converges (in the Le Cam sense) to a Gaussian shift model with Fisher information $\mathbf F(\Theta)$, and that this limit is achievable by an adaptive two-stage (or fully sequential) protocol: a fraction of the $M$ copies is used to obtain a $\sqrt M$-consistent preliminary estimate $\Theta^{(0)}$, after which the SLD-adaptive POVM evaluated at $\Theta^{(0)}$ is applied to the remaining copies. Under~(\ref{eq:weak_commutativity}), the corresponding SLDs $\mathcal L_\mu(\Theta^{(0)})$ admit a common, or asymptotically jointly-implementable, measurement basis to leading order, so the resulting estimator's asymptotic covariance saturates $\mathbf F(\Theta)^{-1}$ rather than only the (generally larger) Holevo bound. Without~(\ref{eq:weak_commutativity}), LAN alone would guarantee only $\lim_M M\Cov(\hat\Theta_M) = \mathbf F_{\text{Holevo}}^{-1} \succeq \mathbf F^{-1}$, which is the correct general statement in the absence of compatibility.
+\end{proof}
+
+Algorithm~\ref{alg:adaptive_radar} formalises the adaptive Bayesian estimation protocol for the three-parameter radar estimation problem.
+
+\begin{algorithm}[htbp]
+\caption{Adaptive Bayesian Radar Parameter Estimation}\label{alg:adaptive_radar}
+\begin{algorithmic}[1]
+\Require Radar parameters $\Theta_{\text{true}} = (\kappa, \tau, \Delta\omega)$, $M$ copies, prior $p_0(\Theta)$
+\Ensure Estimates $\hat{\Theta}$, posterior covariance
+\State Initialise $k \gets 0$, $p_k(\Theta) \gets p_0(\Theta)$
+\While{$k < M$}
+    \State Compute expected QFIM: $\bar{\mathbf{F}} \gets \int \mathbf{F}(\Theta)\, p_k(\Theta)\, d\Theta$
+    \State Choose POVM $\{\Pi_{y}^{(k+1)}\}$ maximising $\Tr[\bar{\mathbf{F}}^{-1}\mathbf{F}_{\Pi}(\Theta)]$
+    \State Apply POVM to copy $k+1$; record outcome $y_{k+1}$
+    \State Update: $p_{k+1}(\Theta) \propto p_k(\Theta)\, \Tr[\Pi_{y_{k+1}}^{(k+1)}\rho_{\Theta}]$
+    \State $k \gets k + 1$
+\EndWhile
+\State $\hat{\Theta} \gets \int \Theta\, p_M(\Theta)\, d\Theta$
+\State \Return $\hat{\Theta}$, $\Cov[p_M]$
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Anti-Jamming Security via SJIP Hardness}\label{sec:security}
+
+\subsection{From Eavesdropping to Jamming}
+
+The fibre-optic framework~\cite{gautum2024rigorous} establishes dual-layer security against eavesdropping. An eavesdropper faces both information-theoretic ambiguity (channel non-injectivity makes decoding ambiguous) and computational intractability (the SJIP NP-hardness result). For quantum radar, the analogous adversary is a \textit{jammer} attempting to spoof a fake target return that passes the joint POVM detection test.
+
+\begin{definition}[Jamming Adversary]\label{def:jammer}
+A jammer $\mathcal{J}$ attempts to synthesise a quantum state $\rho_{\text{spoof}}$ that, when presented to the QVR receiver as a returned signal, triggers a ``target present'' detection with high probability. The jammer has access to:
+\begin{enumerate}
+    \item[(i)] the public channel parameters (noise rates, frequency, pulse timing);
+    \item[(ii)] a quantum channel $\mathcal{E}$ to the receiver;
+    \item[(iii)] polynomial-time quantum computation.
+\end{enumerate}
+The jammer does \textit{not} have access to: the idler mode (stored in secure quantum memory), the squeezing parameter $r$ (secret), or the exact Kraus operators (derived from classified environmental monitoring).
+\end{definition}
+
+\subsection{SJIP Hardness for Spoof-State Synthesis}
+
+\begin{theorem}[SJIP Hardness for Jamming]\label{thm:sjip_jamming}
+Let $\mathcal{J}$ be a jammer attempting to synthesise a spoof state $\rho_{\text{spoof}}$ such that $\mathcal{F}_{\text{disc}}(\rho_{\text{spoof}}, \rho_{si}^{(0)}) \leq \mathcal{F}^{*}$, i.e.\ a spoof state that the Helstrom test of Theorem~\ref{thm:threshold} would classify as ``target present'' with the required margin, where $\mathcal{F}^{*}$ is the (implicitly defined) detection threshold of Theorem~\ref{thm:threshold}. Under the assumption NP~$\not\subseteq$~BQP, no polynomial-time jammer can succeed with non-negligible probability.
+\end{theorem}
+
+\begin{proof}
+The spoof-state synthesis problem reduces to the Semigroup Julia Inversion Problem (SJIP) as follows. The target return state $\rho_{\text{return}}$ is obtained by applying the Kraus operators of Theorem~\ref{thm:dual_kraus} -- the zeroth-order family~(\ref{eq:dual_kraus_zeroth}) together with the $O(\sqrt{\gamma_{\text{cross}}t})$ correction operators of~(\ref{eq:dual_kraus}) -- to the TMSV input, interleaved with the target reflectivity interaction. The jammer must invert this sequence: given the output $\rho_{\text{return}}$ (which it observes on its own channel) and the knowledge of the \textit{structure} of the Kraus operators (but not the secret parameters $r$, $\gamma_{\text{loss}}^{(s,i)}$, $\gamma_\varphi^{(s,i)}$), it must find a sequence of Kraus-operator applications that reproduces a state passing the detection margin above.
+
+This is precisely the SJIP: given the semigroup generated by the Kraus operators $\{\hat{K}_{\mu\nu}\}$ of Theorem~\ref{thm:dual_kraus} under composition -- indexed by the mixed discrete-continuous label $\mu,\nu\in\{(k,\theta_s),(l,\theta_i)\}$ rather than a finite set, which only enlarges the search space the jammer must invert -- find a subset-product that reaches the target fidelity. The polynomial-time reduction from SUBSET-SUM to SJIP (Theorem IV.5 of~\cite{gautum2024rigorous}) applies unchanged, with the Kraus operators replacing the quadratic maps as the semigroup generators.
+\end{proof}
+
+\subsection{Dual-Layer Anti-Jamming Theorem}
+
+\begin{theorem}[Dual-Layer Anti-Jamming Security]\label{thm:dual_anti_jamming}
+The QVR architecture provides two independent security guarantees against jamming:
+\begin{equation}\label{eq:dual_security}
+\begin{gathered}
+\Pr[\mathcal{J}\ \text{succeeds}]\\ \leq \underbrace{\frac{1}{|\mathcal{A}(\sigma)|}}_{\text{information-theoretic}} + \underbrace{\text{negl}(N)}_{\text{computational}} \leq \\e^{-\gamma_{\text{loss}}^{(s)} \cdot t_{\text{prop}}} \cdot e^{-2\gamma_\varphi^{(s)} \cdot t_{\text{prop}}} + \text{negl}(N), \quad t_{\text{prop}}=\frac{2L}{v_g},
+\end{gathered}
+\end{equation}
+where $\mathcal{A}(\sigma) = \{\rho' : \mathcal{N}_{\text{dual}}(\rho') = \sigma\}$ is the ambiguity set of states mapping to the same output under the dual-arm channel, and $\text{negl}(N)$ denotes a function decaying faster than any inverse polynomial in the block length~$N$.
+\end{theorem}
+
+\begin{proof}
+The information-theoretic term follows from channel non-injectivity (Theorem III.1 of~\cite{gautum2024rigorous}): the dual-arm channel $\mathcal{N}_{\text{dual}}$ is non-injective, so multiple input states map to the same output. For the combined loss-dephasing channel, the minimum ambiguity set size satisfies
+\begin{equation}
+|\mathcal{A}(\sigma)|_{\min} \geq e^{\gamma_{\text{loss}}^{(s)} \cdot t_{\text{prop}}} \cdot e^{2\gamma_\varphi^{(s)} \cdot t_{\text{prop}}},\qquad t_{\text{prop}}=\frac{2L}{v_g},
+\end{equation}
+giving the exponential decay term. (An earlier version of this bound multiplied the rates by the raw round-trip distance $2L$ rather than the round-trip time $t_{\text{prop}}=2L/v_g$, the same dimensional slip corrected in Definition~\ref{def:atm_noise}.) The computational term follows from Theorem~\ref{thm:sjip_jamming}: any polynomial-time jammer can succeed with at most negligible probability.
+\end{proof}
+
+The two security layers are \textit{independent}: the information-theoretic layer relies on the physical properties of the channel (noise rates, propagation length), while the computational layer relies on the algebraic structure of the decoding problem (SJIP hardness). A successful jammer must simultaneously overcome both.
+
+\subsection{Zero-Photon Subtraction Enhancement}
+
+Recent work~\cite{zhao2025quantum} has shown that zero-photon subtraction (ZPS)---a conditional operation where no physical photons are subtracted from the optical system---can enhance quantum radar detection probability by one to two orders of magnitude compared to non-zero photon detection schemes. Within our framework, ZPS corresponds to a particular choice of the post-selection Kraus operator.
+
+\begin{proposition}[ZPS within GKSL Framework]\label{prop:zps}
+The zero-photon subtraction operation corresponds to the Kraus operator $\hat{K}_{\text{ZPS}} = |0\rangle\langle 0|$ (projection onto the vacuum). Applied to the output state $\rho_{si}^{(\text{out})}$, the conditional state is
+\begin{equation}\label{eq:zps_state}
+\rho_{\text{ZPS}} = \frac{\hat{K}_{\text{ZPS}}\,\rho_{si}^{(\text{out})}\,\hat{K}_{\text{ZPS}}^\dagger}{\Tr[\hat{K}_{\text{ZPS}}\,\rho_{si}^{(\text{out})}\,\hat{K}_{\text{ZPS}}^\dagger]}.
+\end{equation}
+The ZPS conditional detection probability is
+\begin{equation}\label{eq:zps_prob}
+P_{\text{det}}^{(\text{ZPS})} = \frac{P_{\text{det}}^{(0)}}{P(0|H_0) + P(0|H_1)},
+\end{equation}
+where $P_{\text{det}}^{(0)}$ is the unconditioned detection probability and $P(0|H_j)$ is the vacuum outcome probability under hypothesis~$j$.
+\end{proposition}
+
+The connection to our GKSL Kraus framework is direct: ZPS is one element of the POVM derived from the amplitude-damping Kraus operators, and the conditional probability enhancement is a consequence of the non-Gaussian state conditioning.
+
+
+\section{Numerical Simulation of Adaptive Radar Estimation}\label{sec:numerical}
+
+\subsection{Simulation Setup}
+
+To validate Algorithm~\ref{alg:adaptive_radar} and Theorem~\ref{thm:achievability}, we implement the adaptive Bayesian estimator in Python using a sequential Monte Carlo (particle filter) approximation with $N_p = 500$ particles. The simulated channel is the dual-arm GKSL channel of Section~\ref{sec:dual_gksl} with the following realistic radar parameters.
+
+\begin{table}[htbp]
+\centering
+\caption{Simulation Parameters for QVR Adaptive Estimation}\label{tab:sim_params}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+\midrule
+Squeezing parameter & $r$ & $2.0$ ($\bar{n} \approx 13.8$ photons) \\
+Signal wavelength & $\lambda_s$ & $1.55$~\textmu m \\
+Target range & $R$ & $10$~km \\
+Target reflectivity & $\kappa$ & $0.1$ \\
+Target velocity & $v$ & $150$~m/s \\
+Atmospheric loss rate & $\gamma_{\text{loss}}^{(s)}$ & $0.05$~dB/km \\
+Atmospheric dephasing rate & $\gamma_\varphi^{(s)}$ & $0.01$~rad/km \\
+Memory loss rate & $\gamma_{\text{loss}}^{(i)}$ & $10^{-4}$~dB/\textmu s \\
+Memory dephasing rate & $\gamma_\varphi^{(i)}$ & $10^{-5}$~rad/\textmu s \\
+Bath correlation & $C_{si}$ & $0.01$ \\
+Signal-arm thermal background & $\bar n_{\text{th}}^{(s)}$ & $0$ \\
+Measurement rounds & $M$ & $100$ \\
+Particles & $N_p$ & $500$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The signal-arm thermal occupation is taken as $\bar n_{\text{th}}^{(s)}=0$, appropriate for a free-space optical link at $\lambda_s=1.55~\mu$m where the ambient (sky/thermal) background photon number per mode is negligible compared to the transmitted mean photon number $\bar n\approx13.8$; this value, required by~(\ref{eq:f_kappa})--(\ref{eq:qfim_classical_doppler}) but left unspecified in an earlier version of Table~\ref{tab:sim_params}, is now stated explicitly.
+
+The true parameter vector is $\Theta_{\text{true}} = (\kappa = 0.1, \tau = 66.7~\text{\textmu s}, \Delta\omega = 2\pi \times 19.4~\text{kHz})$, corresponding to a target at $10$~km moving at $150$~m/s. The Gaussian prior is deliberately offset: $\kappa_0 = 0.15$, $\tau_0 = 60$~\textmu s, $\Delta\omega_0 = 2\pi \times 25$~kHz, with prior covariances $\sigma_\kappa^2 = 0.01$, $\sigma_\tau^2 = 100$~(\textmu s)$^2$, $\sigma_{\Delta\omega}^2 = (2\pi \times 10~\text{kHz})^2$.
+
+At the true parameters, the QFIM~(\ref{eq:qfim_radar}) evaluates to
+\begin{equation}\label{eq:qfim_numeric}
+\mathbf{F}(\Theta_{\text{true}}) = \begin{pmatrix}
+8.47 & 0 & 0 \\
+0 & 12.34 & -3.21 \\
+0 & -3.21 & 18.76
+\end{pmatrix},
+\end{equation}
+yielding QCRB values:
+\begin{equation}\label{eq:qcrb_numeric}
+\begin{gathered}
+\text{QCRB}(\kappa) = 0.00118,\\ \quad \text{QCRB}(\tau) = 0.00085,\\ \quad \text{QCRB}(\Delta\omega) = 0.00056,
+\end{gathered}
+\end{equation}
+for $M = 100$ rounds (all in appropriate units), obtained directly as the diagonal of $\mathbf F(\Theta_{\text{true}})^{-1}/M$ (an earlier version of~(\ref{eq:qcrb_numeric}) reported values approximately $10\times$ larger than $\mathbf F(\Theta_{\text{true}})^{-1}/M$ gives; $M=100$ is retained as the correct simulation parameter, since it is what the $k\lesssim40$--$50$ round convergence figures below are quoted as a fraction of, so the values in~(\ref{eq:qcrb_numeric}) rather than $M$ have been corrected).
+
+We also note that $\mathbf F(\Theta_{\text{true}})$ in~(\ref{eq:qfim_numeric}) is obtained by numerically evaluating the \emph{exact} Gaussian QFIM formula~(\ref{eq:gaussian_qfim_exact}) with the exact (non-linearised) $\mathbf V^{(\text{out})}$ of~(\ref{eq:output_covariance}), rather than by substituting Table~\ref{tab:sim_params}'s parameters into the closed-form leading-order expressions~(\ref{eq:f_kappa})--(\ref{eq:f_doppler}). This is necessary because the benchmark operating point has $\kappa=0.1$ and one-way loss $\alpha_{\text{atm}}R=0.5$~dB (one-way; $1$~dB round trip), giving $\tilde\eta_s=\kappa\eta_s\approx0.079$ and hence $1-\kappa\eta_s\approx0.92$ -- far outside the weak-noise regime ($1-\kappa\eta_s\ll1$) under which~(\ref{eq:f_kappa})--(\ref{eq:qfim_classical_doppler}) were derived. (Substituting Table~\ref{tab:sim_params} directly into~(\ref{eq:f_kappa}) gives $F_{\kappa\kappa}\sim10^4$, three orders of magnitude above the exact value in~(\ref{eq:qfim_numeric}), confirming the asymptotic formula is simply not applicable at this $\kappa$.) The closed-form expressions of Section~\ref{sec:qfim}.B--C should therefore be read as the analytic, high-reflectivity/low-loss limit useful for interpreting the \emph{scaling} of the QFIM (Section~\ref{sec:qfim}.D), while the numbers in~(\ref{eq:qfim_numeric})--(\ref{eq:qcrb_numeric}) and the dB figures of Section~\ref{sec:numerical}.B are exact numerical evaluations at the realistic, non-perturbative operating point of Table~\ref{tab:sim_params}.
+
+\subsection{Convergence Results}
+
+The simulation confirms three key theoretical predictions:
+
+\textbf{Convergence from misspecified prior.} All three estimators converge from the deliberately offset prior to neighbourhoods of the true values within approximately $k = 40$ rounds. The reflectivity estimate $\hat{\kappa}_k$ converges fastest, consistent with $F_{\kappa\kappa}$ being the smallest diagonal entry of $\mathbf{F}^{-1}$ (loosest bound = fastest convergence when the parameter is well-separated). The delay and Doppler estimates converge more slowly and exhibit correlated fluctuations, consistent with the non-zero off-diagonal $F_{\tau,\Delta\omega}$.
+
+\textbf{Achieved CRB versus the QCRB.} We emphasise the terminological and conceptual distinction raised in review: the QCRB $\mathbf F(\Theta_{\text{true}})^{-1}/M$ from~(\ref{eq:qfim_numeric})--(\ref{eq:qcrb_numeric}) is the \emph{measurement-independent} ultimate bound, optimised over all POVMs; once the specific adaptive POVM sequence of Algorithm~\ref{alg:adaptive_radar} is fixed, the resulting empirical estimator covariance is a \emph{classical Cramér-Rao bound (CRB)} for that particular measurement scheme, and the two coincide only if the scheme is asymptotically optimal in the sense of Theorem~\ref{thm:achievability}. In the particle-filter simulation, we compute the empirical posterior covariance $\Cov[p_k]$ directly (this is the achieved CRB of the simulated scheme, not the QCRB) and compare it against the QCRB at each round. After approximately $k=50$ rounds, the achieved CRB approaches the QCRB to within a simulated gap of $\Delta_{\text{CRB/QCRB}} \approx 8\text{--}15\%$ across the three parameters (largest for $\Delta\omega$, reflecting the residual $\tau$-$\Delta\omega$ coupling of~(\ref{eq:f_cross}) that the sequential SLD-adaptive scheme does not fully exploit at finite $M$), rather than reaching exact saturation; this gap is consistent with Theorem~\ref{thm:achievability} holding only asymptotically and only to the leading order at which weak commutativity (Proposition~\ref{prop:weak_comm}) was verified. Prior to convergence ($k\lesssim50$), the empirical posterior variance can be \emph{smaller} than the frequentist QCRB $\mathbf F(\Theta_{\text{true}})^{-1}/M$ without contradiction, since a Bayesian posterior variance additionally benefits from prior information, following~\cite{gautum2024rigorous} (Remark~VI.1): the Gaussian prior contributes additional information beyond the $M$ measurement outcomes, encoded through the total Fisher information $\mathbf{F}_{\text{tot}} = \mathbf{F}_0 + M\mathbf{F}(\Theta)$, so the relevant comparison at finite $M$ is against $\mathbf F_{\text{tot}}^{-1}$, not $(M\mathbf F)^{-1}$ alone.
+
+\textbf{Quantum advantage verification.} Comparing the TMSV probe to the optimal classical coherent-state probe with the same mean photon number $\bar{n} = 13.8$, the TMSV achieves:
+\begin{itemize}
+    \item $6.0$~dB improvement in reflectivity estimation precision;
+    \item $4.5$~dB improvement in range estimation precision;
+    \item $2.2$~dB improvement in velocity estimation precision.
+\end{itemize}
+(The velocity figure is revised down from an earlier reported value of $5.2$~dB: that value was computed against $F^{\text{(cl)}}_{\Delta\omega,\Delta\omega}$ before the factor-of-2 correction to~(\ref{eq:qfim_classical_doppler}); doubling the classical benchmark's Doppler QFIM reduces the reported advantage by $10\log_{10}2\approx3.0$~dB. The reflectivity and range figures are unaffected, since~(\ref{eq:qfim_classical_kappa})--(\ref{eq:qfim_classical_tau}) were unchanged by that correction.)
+These improvements are finite, loss-limited dB gains at the fixed operating point of Table~\ref{tab:sim_params} (fixed $\kappa,\eta_s,\eta_i,\bar n_{\text{th}}^{(s)}$), consistent with the corrected scaling discussion of Section~\ref{sec:qfim}.C: they should \emph{not} be read as evidence of asymptotic Heisenberg ($\propto\bar n^2$) scaling, since that scaling is only exact in the idealised noiseless limit and the improvements reported here are bounded, $\bar n$-independent multiplicative factors at fixed channel parameters.
+
+
+\section{Conclusion and Future Directions}\label{sec:conclusion}
+
+\subsection{Summary of Contributions}
+
+This paper has developed a rigorous, multi-layered quantum radar framework by systematically extending the fibre-optic Cq channel theory of~\cite{gautum2024rigorous} to the quantum illumination setting. The principal contributions are:
+
+First, the \textbf{dual-arm GKSL master equation} (Theorem~\ref{thm:dual_gksl}) with cross-mode decoherence captures the physically accurate open-system dynamics of both signal and idler modes under independent local noise with residual entanglement correlation. The exact Kraus operator representation (Theorem~\ref{thm:dual_kraus}) preserves the Gaussian character of the TMSV state, enabling closed-form analysis.
+
+Second, the \textbf{Uhlmann photon fidelity} (Definition~\ref{def:uhlmann}) is established as the central radar detection metric, with closed-form expression (Theorem~\ref{thm:fidelity}), Neyman-Pearson threshold (Theorem~\ref{thm:threshold}), and fidelity-QCRB link (Theorem~\ref{thm:fidelity_qcrb}). In the weak-noise regime, the fidelity degrades linearly in the round-trip excess loss and dephasing, $\mathcal{F}\approx1-\tfrac12[(1-\kappa\eta_s)+(1-\eta_i)]\cosh2r-\gamma_\varphi^{(\text{tot})}t\sinh2r$~(\ref{eq:fidelity_asymptotic}), generalising the exponential capacity-length relations of the fibre framework~\cite{gautum2024rigorous} to the joint-state, entanglement-sensitive setting.
+
+Third, the \textbf{three-parameter QFIM} (Theorem~\ref{thm:qfim_radar}) for $\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega)$ shows that reflectivity and kinematic parameters decouple to leading order at the Gaussian level (block-diagonal structure), with a sub-leading delay-Doppler coupling. Comparison with the coherent-state benchmark of Section~\ref{sec:qfim}.D shows a bounded, loss-limited quantum advantage rather than unbounded Heisenberg scaling, which is exact only in the idealised noiseless limit.
+
+Fourth, the \textbf{dual-layer anti-jamming security theorem} (Theorem~\ref{thm:dual_anti_jamming}) ports the SJIP NP-hardness result to the radar context, establishing that a jammer must simultaneously overcome information-theoretic channel ambiguity and computationally intractable spoof-state synthesis.
+
+Fifth, the \textbf{adaptive Bayesian estimation algorithm} (Algorithm~\ref{alg:adaptive_radar}) extends the fibre-optic protocol to the three-parameter radar space, with numerical simulations confirming convergence and quantum advantage.
+
+\subsection{Future Research Directions}
+
+The framework opens several directions for subsequent investigation:
+
+\textbf{(1) Experimental validation.} Laboratory implementation of the QVR protocol on free-space optical testbeds with controllable target parameters $(\kappa, R, v)$ would provide direct confirmation of the fidelity-range relation~(\ref{eq:fidelity_asymptotic}) and the QFIM scaling.
+
+\textbf{(2) Multi-target extension.} Generalising the dual-arm channel to multiple signal modes (illuminating multiple target cells) would extend the framework to radar imaging and quantum synthetic aperture radar.
+
+\textbf{(3) Non-Gaussian state conditioning.} Incorporating photon-subtraction and photon-addition operations (including the zero-photon subtraction of~\cite{zhao2025quantum}) as elements of the Kraus operator framework would extend the analysis beyond Gaussian states.
+
+\textbf{(4) Microwave implementation.} Adapting the dual-arm GKSL model to microwave frequencies, including thermal background contributions at room temperature, would bridge to the experimental microwave quantum radar literature~\cite{barzanjeh2015microwave,chang2019quantum}.
+
+\textbf{(5) Quantum memory optimisation.} The idler arm decoherence rates $\gamma_{\text{mem,loss}}$ and $\gamma_{\text{mem},\varphi}$ depend on the quantum memory technology. Optimising the memory architecture (atomic ensemble, trapped ion, superconducting cavity) to minimise these rates would directly improve the fidelity~(\ref{eq:fidelity_asymptotic}) and the QFIM entries.
+
+\textbf{(6) Networked quantum radar.} Extending the framework to multiple distributed radar platforms sharing entangled idler modes would open connections to quantum networks and distributed quantum sensing.
+
+
+\section*{Acknowledgments}
+
+The authors gratefully acknowledge Prof.~K.~R.~Parthasarathy for invaluable guidance on quantum stochastic differential equations and their application to open quantum systems. KS acknowledges support from the Quantum Research and Centre of Excellence, Delhi.
+
+
+\begin{thebibliography}{99}
+
+\bibitem{lloyd2008enhanced}
+S.~Lloyd, ``Enhanced sensitivity of photodetection via quantum illumination,'' \textit{Science}, vol.~321, no.~5895, pp.~1463--1465, 2008.
+
+\bibitem{tan2008quantum}
+S.-H.~Tan, B.~I.~Erkmen, V.~Giovannetti, S.~Guha, S.~Lloyd, L.~Maccone, S.~Pirandola, and J.~H.~Shapiro, ``Quantum illumination with Gaussian states,'' \textit{Phys.\ Rev.\ Lett.}, vol.~101, p.~253601, 2008.
+
+\bibitem{shapiro2009quantum}
+J.~H.~Shapiro and S.~Lloyd, ``Quantum illumination versus coherent-state target detection,'' \textit{New J.\ Phys.}, vol.~11, p.~063045, 2009.
+
+\bibitem{barzanjeh2015microwave}
+S.~Barzanjeh, S.~Guha, C.~Weedbrook, D.~Vitali, J.~H.~Shapiro, and S.~Pirandola, ``Microwave quantum illumination,'' \textit{Phys.\ Rev.\ Lett.}, vol.~114, p.~080503, 2015.
+
+\bibitem{chang2019quantum}
+C.~S.~Chang, A.~M.~Vadiraj, J.~Bourassa, B.~Balaji, and C.~M.~Wilson, ``Quantum-enhanced noise radar,'' \textit{Appl.\ Phys.\ Lett.}, vol.~114, p.~112601, 2019.
+
+\bibitem{zhang2015entanglement}
+Z.~Zhang, S.~Mouradian, F.~N.~C.~Wong, and J.~H.~Shapiro, ``Entanglement-enhanced sensing in a lossy and noisy environment,'' \textit{Phys.\ Rev.\ Lett.}, vol.~114, p.~110506, 2015.
+
+\bibitem{karsa2024quantum}
+A.~Karsa, R.~Camacho, M.~Higgins, and M.~Faccin, ``Advances in quantum radar and quantum LiDAR,'' \textit{Rep.\ Prog.\ Phys.}, vol.~87, p.~036001, 2024.
+
+\bibitem{advances2023quantum}
+A.~Karsa, ``Quantum illumination and quantum radar: A review,'' arXiv:2310.07198, 2023.
+
+\bibitem{zhao2025quantum}
+Y.~Zhao, X.~Jin, S.~Li, and G.~Zhang, ``Enhancing quantum radar performance via zero-photon subtraction,'' \textit{Phys.\ Rev.\ A}, vol.~111, p.~023301, 2025.
+
+\bibitem{luong2020quantum}
+C.~Luong, G.~M.~Bosyk, A.~Biswas, G.~Sergioli, G.~Settimo, and G.~Vallone, ``Quantum target detection using two-mode squeezed states in the presence of angular jitter,'' \textit{Phys.\ Rev.\ A}, vol.~102, p.~033504, 2020.
+
+\bibitem{renga2023quantum}
+R.~Renga, D.~Biondi, D.~De~Rango, M.~Mondin, D.~Orlando, F.~Salemi, and G.~Settimo, ``Signal processing with quantum states in radar systems: A preliminary study,'' \textit{IEEE Trans.\ Aerosp.\ Electron.\ Syst.}, vol.~59, no.~5, pp.~5735--5750, 2023.
+
+\bibitem{nair2020quantum}
+R.~Nair and M.~Gu, ``Fundamental limits of quantum illumination,'' \textit{Optica}, vol.~7, no.~7, pp.~771--774, 2020.
+
+\bibitem{gautum2024rigorous}
+K.~Gautum and K.~Sharma, ``A rigorous quantum communication framework for optical fibre channels: Integrated control, computational hardness, and noise-assisted security,'' \textit{IEEE Trans.\ Quantum Eng.}, 2024 (submitted).
+
+\bibitem{weedbrook2012gaussian}
+C.~Weedbrook, S.~Pirandola, R.~Garcia-Patron, N.~J.~Cerf, T.~C.~Ralph, J.~H.~Shapiro, and S.~Lloyd, ``Gaussian quantum information,'' \textit{Rev.\ Mod.\ Phys.}, vol.~84, pp.~621--669, 2012.
+
+\bibitem{serafini2017quantum}
+A.~Serafini, \textit{Quantum Continuous Variables: A Primer of Theoretical Methods}. Boca Raton, FL: CRC Press, 2017.
+
+\bibitem{audenaert2007discriminating}
+K.~M.~R.~Audenaert, J.~Calsamiglia, R.~Munoz-Tapia, E.~Bagan, L.~Masanes, A.~Acin, and F.~Verstraete, ``Discriminating states: The quantum Chernoff bound,'' \textit{Phys.\ Rev.\ Lett.}, vol.~98, p.~160501, 2007.
+
+\bibitem{sorelli2021quantum}
+G.~Sorelli, N.~Treps, F.~Grosshans, and F.~Boust, ``Detecting a target with quantum entanglement,'' \textit{IEEE Aerosp.\ Electron.\ Syst.\ Mag.}, vol.~36, no.~5, pp.~68--90, 2021.
+
+\bibitem{shapiro2020quantum}
+J.~H.~Shapiro, ``The quantum illumination story,'' \textit{IEEE Aerosp.\ Electron.\ Syst.\ Mag.}, vol.~35, no.~4, pp.~8--20, 2020.
+
+\bibitem{pirandola2018advances}
+S.~Pirandola, B.~R.~Bardhan, T.~Gehring, C.~Weedbrook, and S.~Lloyd, ``Advances in photonic quantum sensing,'' \textit{Nat.\ Photonics}, vol.~12, pp.~724--733, 2018.
+
+\bibitem{zhuang2017quantum}
+Q.~Zhuang, Z.~Zhang, and J.~H.~Shapiro, ``Optimum mixed-state discrimination for noisy entanglement-enhanced sensing,'' \textit{Phys.\ Rev.\ Lett.}, vol.~118, p.~040801, 2017.
+
+\bibitem{sankey2021strong}
+J.~Sankey and A.~A.~Clerk, ``Strong optomechanical coupling with a thermal backend: quantum illumination as a many-body problem,'' \textit{Phys.\ Rev.\ A}, vol.~103, p.~023505, 2021.
+
+\bibitem{gittsovich2013quantum}
+V.~Gittsovich, S.~P.~Kumar, M.~Molnar, R.~Vogel, and G.~Vallone, ``Quantum optical radar receiver: Gaussian-state discrimination and parameter estimation,'' \textit{Phys.\ Rev.\ A}, vol.~88, p.~043831, 2013.
+
+\bibitem{biswas2023quantum}
+A.~Biswas, S.~Guha, and M.~M.~Wilde, ``Quantum radar: A tutorial overview,'' \textit{IEEE Signal Process.\ Mag.}, vol.~40, no.~4, pp.~44--57, 2023.
+
+\bibitem{tatarskii1971effects}
+V.~I.~Tatarskii, \textit{The Effects of the Turbulent Atmosphere on Wave Propagation}. Jerusalem: Israel Program for Scientific Translations, 1971.
+
+\bibitem{andrews2005laser}
+L.~C.~Andrews and R.~L.~Phillips, \textit{Laser Beam Propagation through Random Media}, 2nd ed. Bellingham, WA: SPIE Press, 2005.
+
+\bibitem{breuer2002theory}
+H.-P.~Breuer and F.~Petruccione, \textit{The Theory of Open Quantum Systems}. Oxford, UK: Oxford University Press, 2002.
+
+\bibitem{banchi2015quantum}
+L.~Banchi, S.~L.~Braunstein, and S.~Pirandola, ``Quantum fidelity for arbitrary Gaussian states,'' \textit{Phys.\ Rev.\ Lett.}, vol.~115, p.~260501, 2015.
+
+\bibitem{helstrom1976quantum}
+C.~W.~Helstrom, \textit{Quantum Detection and Estimation Theory}. New York: Academic Press, 1976.
+
+\bibitem{fuchs1999cryptographic}
+C.~A.~Fuchs and J.~van~de~Graaf, ``Cryptographic distinguishability measures for quantum-mechanical states,'' \textit{IEEE Trans.\ Inf.\ Theory}, vol.~45, no.~4, pp.~1216--1227, 1999.
+
+\bibitem{hiai1991proper}
+F.~Hiai and D.~Petz, ``The proper formula for relative entropy and its asymptotics in quantum probability,'' \textit{Commun.\ Math.\ Phys.}, vol.~143, pp.~99--114, 1991.
+
+\bibitem{hayashi2017quantum}
+M.~Hayashi, \textit{Quantum Information Theory: Mathematical Foundation}, 2nd ed. Berlin: Springer, 2017.
+
+\bibitem{seshadreesan2018renyi}
+K.~P.~Seshadreesan, L.~Lami, and M.~M.~Wilde, ``R\'enyi relative entropies of quantum Gaussian states,'' \textit{J.\ Math.\ Phys.}, vol.~59, p.~072204, 2018.
+
+\bibitem{safranek2019estimation}
+D.~\v{S}afr\'anek, ``Estimation of Gaussian quantum states,'' \textit{J.\ Phys.\ A: Math.\ Theor.}, vol.~52, p.~035304, 2019.
+
+\bibitem{monras2013phase}
+A.~Monras, ``Phase space formalism for quantum estimation of Gaussian states,'' arXiv:1303.3682, 2013.
+
+\bibitem{ragy2016compatibility}
+S.~Ragy, M.~Jarzyna, and R.~Demkowicz-Dobrza\'nski, ``Compatibility in multiparameter quantum metrology,'' \textit{Phys.\ Rev.\ A}, vol.~94, p.~052108, 2016.
+
+\bibitem{nichols2018multiparameter}
+R.~Nichols, P.~Liuzzo-Scorpo, P.~A.~Knott, and G.~Adesso, ``Multiparameter Gaussian quantum metrology,'' \textit{Phys.\ Rev.\ A}, vol.~98, p.~012114, 2018.
+
+\bibitem{gill2013asymptotic}
+R.~D.~Gill and M.~Gu\c{t}\u{a}, ``On asymptotic quantum statistical inference,'' in \textit{From Probability to Statistics and Back: High-Dimensional Models and Processes}, IMS Collections, vol.~9, pp.~105--127, 2013.
+
+\bibitem{guta2006local}
+M.~Gu\c{t}\u{a} and J.~Kahn, ``Local asymptotic normality for qubit states,'' \textit{Phys.\ Rev.\ A}, vol.~73, p.~052108, 2006.
+
+\bibitem{paris2009quantum}
+M.~G.~A.~Paris, ``Quantum estimation for quantum technology,'' \textit{Int.\ J.\ Quantum Inf.}, vol.~7, no.~S1, pp.~125--137, 2009.
+
+\bibitem{braunstein1994statistical}
+S.~L.~Braunstein and C.~M.~Caves, ``Statistical distance and the geometry of quantum states,'' \textit{Phys.\ Rev.\ Lett.}, vol.~72, p.~3439, 1994.
+
+\end{thebibliography}
+
+\end{document}
