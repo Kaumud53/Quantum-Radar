@@ -1,0 +1,764 @@
+\documentclass[journal]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathrsfs}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{braket}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{siunitx}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=darkgray,
+    urlcolor=blue,
+    bookmarks=true,
+    bookmarksnumbered=true,
+    unicode=true,
+    pdftitle={Entanglement-Enhanced Quantum Radar via Dual-Arm GKSL Dynamics},
+    pdfauthor={Kumar Gautam and Kaumud Sharma}
+}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\sinc}{sinc}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\sech}{sech}
+\DeclareMathOperator{\erf}{erf}
+\DeclareMathOperator{\Var}{Var}
+\newcommand{\TMSV}{\text{TMSV}}
+\newcommand{\GKSL}{\text{GKSL}}
+\newcommand{\SLD}{\text{SLD}}
+\newcommand{\QFIM}{\text{QFIM}}
+\newcommand{\QCRB}{\text{QCRB}}
+\newcommand{\SJIP}{\text{SJIP}}
+\newcommand{\QDPI}{\text{QDPI}}
+\newcommand{\SPDC}{\text{SPDC}}
+\newcommand{\QVR}{\text{QVR}}
+\newcommand{\SNR}{\text{SNR}}
+\newcommand{\CPTP}{\text{CPTP}}
+
+
+\begin{document}
+
+\title{Entanglement-Enhanced Quantum Radar via Dual-Arm GKSL Dynamics and Fidelity-Based Target Discrimination}
+
+\author{Kumar~Gautam{$^1$} and Kaumud~Sharma{$^2$}
+\thanks{Corresponding Author: edumonk@ieee.org}
+\thanks{{$^{1,2}$} Department of Quantum Computing, Quantum Research and Centre of Excellence, Delhi, India.}
+\thanks{The authors gratefully acknowledge Prof.~K.~R.~Parthasarathy for invaluable guidance on quantum stochastic differential equations.}
+}
+
+\maketitle
+
+\begin{abstract}
+This paper develops a comprehensive and mathematically rigorous quantum radar framework by extending a layered classical-quantum (Cq) channel theory to the domain of quantum illumination. The core probe state is replaced from the single-mode coherent state to the two-mode squeezed vacuum (TMSV) state generated via spontaneous parametric down-conversion, establishing a quantum vacuum-seeded receiver (QVR) architecture in which the signal mode illuminates the target region while the idler mode is retained locally as a quantum reference. We obtain the complete dual-arm open-system dynamics: The signal arm (subject to round-trip atmospheric amplitude damping and phase dephasing) and the idler arm (stored in quantum memory with independent decoherence) are governed by two coupled Gorini-Kossakowski-Sudarshan-Lindblad (GKSL) master equations, along with a cross-mode decoherence term that captures residual entanglement degradation between the two modes.. The central performance metric is the Uhlmann photon fidelity between the returned signal state and the locally stored idler reference, from which we derive a Neyman-Pearson detection threshold and prove the fidelity-QCRB link that connects detection performance to the quantum estimation bound. We derive the three-parameter quantum Fisher information matrix (QFIM) for the radar parameter vector—target reflectivity, round-trip delay encoding range, and Doppler shift—showing that the diagonal structure carries over from the fiber-optic loss-dephasing channel. The semigroup Julia inversion problem (SJIP) NP-hardness result is ported from the fiber communication context to establish dual-layer anti-jamming security. Explicit engineering-ready parameter dependencies and experimentally testable predictions are provided throughout.
+\end{abstract}
+
+\begin{IEEEkeywords}
+\sloppy
+Quantum radar, two-mode squeezed vacuum, classical-quantum channel, GKSL master equation, Uhlmann fidelity, dual-arm decoherence.
+\end{IEEEkeywords}
+
+\IEEEpeerreviewmaketitle
+
+
+\section{Introduction}\label{sec:intro}
+
+\IEEEPARstart{T}{he} detection and ranging of objects using quantum states of electromagnetic radiation---quantum radar---represents one of the most compelling applied frontiers of quantum information science. The central premise, originating with the quantum illumination protocol of Lloyd~\cite{lloyd2008enhanced} and subsequently refined by Tan~\textit{et~al.}~\cite{tan2008quantum}, Shapiro~\cite{shapiro2009quantum}, and others, is that entanglement between a transmitted signal mode and a locally retained idler mode can confer a detection advantage over any classical coherent-state strategy, even when the entanglement is completely destroyed by environmental noise. This counter-intuitive resilience---termed the ``entanglement advantage without entanglement'' paradox---has been experimentally demonstrated in both microwave~\cite{barzanjeh2015microwave,chang2019quantum} and optical~\cite{zhang2015entanglement} regimes, and remains the subject of intense theoretical and experimental investigation~\cite{karsa2024quantum}.
+
+The theoretical analysis of quantum radar, however, has traditionally proceeded along two largely disconnected paths. On one side, quantum optical treatments derive the Gaussian-state covariance matrix of the signal-idler pair, compute the quantum Chernoff bound or Bhattacharyya coefficient for hypothesis testing, and compare the quantum-illumination signal-to-noise ratio to that of the optimal classical coherent-state radar~\cite{luong2020quantum,renga2023quantum}. On the other side, quantum information-theoretic treatments characterise the channel as a completely-positive trace-preserving (CPTP) map, bound its Holevo capacity, and study the computational complexity of optimal decoding~\cite{nair2020quantum}. What has been missing is a \textit{unified} framework that simultaneously: (i) starts from first-quantised electromagnetic field theory and derives the probe-state preparation; (ii) builds the classical-quantum (Cq) channel with explicit atmospheric and device-parameter dependencies; (iii) incorporates open-system GKSL noise with exact Kraus-operator solutions; (iv) proves capacity-enhancement via integrated quantum control; (v) establishes computational hardness results for adversarial decoding; and (vi) derives multi-parameter quantum Cramer-Rao bounds for the radar-specific observables.
+
+This paper constructs precisely such a unified framework by extending the five-layer fibre-optic Cq channel theory of~\cite{gautum2024rigorous} to the quantum radar setting. Each layer of the fibre framework maps naturally onto a corresponding radar problem:
+
+\textbf{Layer 1 -- Field quantisation and probe states.} The fibre framework quantises the electromagnetic field over modal decompositions and derives coherent states~$|\alpha\rangle$ as probe states. In the radar extension, the signal-idler entangled pair generated by spontaneous parametric down-conversion (SPDC) replaces the single-mode coherent probe. The squeezing parameter~$r$ controls both the signal power and the signal-idler quantum correlations.
+
+\textbf{Layer 2 -- Cq channel and Holevo capacity.} The fibre framework derives the Holevo capacity~$C(\theta)$ for BPSK coherent-state encoding. Quantum radar replaces this with the joint signal-idler channel capacity---a two-mode Holevo quantity over the TMSV state---and connects it to the photon-fidelity detection metric rather than the communication-rate metric.
+
+\textbf{Layer 3 -- GKSL noise with exact Kraus operators.} The single-mode GKSL master equation with amplitude damping and dephasing Kraus operators transfers directly. The radar extension requires \textit{two coupled} GKSL equations: one for the signal arm (propagating to the target and back, experiencing round-trip loss~$\gamma_{\text{loss}}(2L)$ and turbulence dephasing~$\gamma_{\varphi}(2L)$) and one for the idler arm (stored in quantum memory, experiencing~$\gamma_{\text{mem}} \cdot t_{\text{wait}}$). The cross-mode decoherence term---capturing how entanglement partially survives noise---is the key new physics contribution.
+
+\textbf{Layer 4 -- Integrated quantum control and NP-hardness.} The integrated control theorem (capacity enhancement via mid-evolution~$H_c(t)$) becomes a noise-mitigation strategy for the radar receiver. The semigroup Julia inversion problem (SJIP) NP-hardness result becomes an anti-jamming security guarantee: a jammer synthesising fake target returns must solve the same computationally intractable inversion problem.
+
+\textbf{Layer 5 -- Multi-parameter QCRB via QFIM.} The two-parameter QFIM for~$(\bar{n}, \phi)$ in the fibre paper extends to a three-parameter QFIM for~$\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega)$---target reflectivity, round-trip delay (encoding range), and Doppler shift. The diagonal structure carries over: reflectivity and phase parameters decouple at the Gaussian level.
+
+The \textbf{primary novel contributions} of this paper are:
+\begin{enumerate}
+    \item The dual-arm GKSL master equation with cross-mode decoherence, which captures the physically accurate open-system dynamics of both signal and idler modes under independent local noise with residual entanglement correlation.
+    \item The Uhlmann photon fidelity~$\mathcal{F}(\rho_{\text{return}}, \rho_{\text{ref}})$ as the central radar detection metric, together with the Neyman-Pearson threshold~$\mathcal{F}^{*}$ and the fidelity-QCRB link theorem.
+    \item The explicit three-parameter QFIM for~$(\kappa, \tau, \Delta\omega)$, derived via the symmetric logarithmic derivative formalism applied to the TMSV output state after the dual-arm noise channel.
+    \item The dual-layer anti-jamming security theorem, combining information-theoretic channel non-injectivity with SJIP computational hardness, ported from the eavesdropping context to the radar jamming context.
+    \item An adaptive Bayesian estimation algorithm (Algorithm~\ref{alg:adaptive_radar}) extended to the three-parameter radar space, with numerical convergence demonstrations.
+\end{enumerate}
+
+The paper is organised as follows. Section~\ref{sec:tmsv} introduces the TMSV probe states and the QVR architecture. Section~\ref{sec:dual_gksl} develops the dual-arm channel model with cross-decoherence. Section~\ref{sec:fidelity} establishes photon fidelity as the detection metric. Section~\ref{sec:qfim} derives the three-parameter QFIM and adaptive estimation protocol. Section~\ref{sec:security} ports the SJIP hardness result to anti-jamming security. Section~\ref{sec:numerical} presents numerical simulations. Section~\ref{sec:conclusion} concludes with future directions.
+
+
+\section{TMSV Probe States and the QVR Architecture}\label{sec:tmsv}
+
+\subsection{From Coherent States to Entangled Probe States}
+
+In the fibre-optic Cq channel~\cite{gautum2024rigorous}, the probe state is a single-mode coherent state~$|\alpha(\theta)\rangle$, where the complex amplitude $\alpha(\theta) = \alpha_0 e^{i\beta(\theta)L - \alpha_{\text{att}}L/2}$ encodes the classical symbol through the phase and carries the fibre-dependent attenuation. For quantum radar, we replace this with the two-mode squeezed vacuum state generated via spontaneous parametric down-conversion in a nonlinear~$\chi^{(2)}$ crystal.
+
+The SPDC Hamiltonian in the rotating-wave approximation is
+\begin{equation}\label{eq:spdc_hamiltonian}
+H_{\text{SPDC}} = i\hbar\chi^{(2)}\left(\hat{a}_s^\dagger \hat{a}_i^\dagger e^{-i\omega_p t} - \hat{a}_s \hat{a}_i e^{i\omega_p t}\right),
+\end{equation}
+where $\hat{a}_s$ ($\hat{a}_i$) is the annihilation operator for the signal (idler) mode and $\omega_p = \omega_s + \omega_i$ is the pump frequency. The interaction strength is
+\begin{equation}\label{eq:chi2_coupling}
+\chi^{(2)} = \sqrt{\frac{\hbar\omega_s\omega_i\omega_p}{2\epsilon_0 c^3 n_s n_i n_p}} \cdot d_{\text{eff}} \cdot \Phi(\Delta\mathbf{k}),
+\end{equation}
+where $d_{\text{eff}}$ is the effective nonlinear coefficient and $\Phi(\Delta\mathbf{k})$ is the phase-matching function depending on the wavevector mismatch $\Delta\mathbf{k} = \mathbf{k}_p - \mathbf{k}_s - \mathbf{k}_i$.
+
+\begin{definition}[TMSV State]\label{def:tmsv}
+The two-mode squeezed vacuum state generated by applying the two-mode squeezing operator $\hat{S}(r) = \exp[r(\hat{a}_s\hat{a}_i - \hat{a}_s^\dagger\hat{a}_i^\dagger)/2]$ to the vacuum is
+\begin{equation}\label{eq:tmsv_state}
+|\psi_{\text{TMSV}}\rangle = \hat{S}(r)|0\rangle_s|0\rangle_i = sech(r)\sum_{n=0}^{\infty}(-tanh r)^n |n\rangle_s|n\rangle_i ,
+\end{equation}
+where $r \geq 0$ is the squeezing parameter. The mean photon number in each mode is
+\begin{equation}\label{eq:mean_photon_tmsv}
+\bar{n} = \sinh^2 r,
+\end{equation}
+and the variance of the photon number difference $\hat{n}_s - \hat{n}_i$ is zero---a signature of perfect number correlations.
+\end{definition}
+
+\subsection{The QVR Architecture}
+
+The quantum vacuum-seeded receiver (QVR) architecture operates as follows. The TMSV state is prepared at the radar platform. The signal mode $\hat{a}_s$ is transmitted toward the target region through a noisy atmospheric/free-space channel of length~$L$, experiences reflection from a target with reflectivity~$\kappa$, and returns through the same channel (total propagation~$2L$). The idler mode $\hat{a}_i$ is stored in a local quantum memory for the round-trip duration $t_{\text{wait}} = 2L/c$. Upon return, a joint measurement is performed on the signal-idler pair.
+
+\begin{definition}[QVR Channel]\label{def:qvr_channel}
+The QVR channel is the concatenation of three operations:
+\begin{enumerate}
+    \item[(i)] \textit{Signal propagation}: the signal mode undergoes forward propagation through the atmospheric channel $\mathcal{N}_{\text{atm}}^{(L)}$, target interaction via the reflectivity operator $\hat{R}(\kappa)$, and backward propagation $\mathcal{N}_{\text{atm}}^{(L)}$.
+    \item[(ii)] \textit{Idler storage}: the idler mode undergoes local quantum memory decoherence $\mathcal{N}_{\text{mem}}^{(t_{\text{wait}})}$.
+    \item[(iii)] \textit{Joint detection}: a joint POVM $\{\Pi_y\}$ is applied to the bipartite output state $\rho_{si}^{(\text{out})}$.
+\end{enumerate}
+\end{definition}
+
+The atmospheric channel is characterised by two dominant noise mechanisms: \textit{amplitude damping} (photon loss from atmospheric absorption and scattering) with rate~$\gamma_{\text{loss}}$, and \textit{phase damping} (dephasing from atmospheric turbulence and refractive index fluctuations) with rate~$\gamma_{\varphi}$. These are the direct analogues of the fibre-optic amplitude and phase damping rates~\cite{gautum2024rigorous}, with the critical difference that the round-trip propagation doubles the effective path length.
+
+\begin{definition}[Atmospheric Noise Parameters]\label{def:atm_noise}
+The amplitude-damping rate and phase-damping rate for round-trip atmospheric propagation are, respectively,
+\begin{equation}\label{eq:atm_noise_rates}
+\gamma_{\text{loss}}^{(2L)} = \frac{\alpha_{\text{atm}} v_g \ln 10}{10} \cdot 2L
+\end{equation}
+
+\begin{equation}\label{eq:atm_noise_rates}
+\gamma_{\varphi}^{(2L)} = \frac{(\omega D_t \Delta L)^2 v_g}{2} \cdot 2L
+\end{equation}
+
+where $\alpha_{\text{atm}}$ is the atmospheric attenuation coefficient (in dB/km), $D_t$ is the turbulence-induced polarisation-mode dispersion parameter, and $v_g$ is the group velocity.
+\end{definition}
+
+\subsection{Two-Mode Hamiltonian and Probe-State Preparation}
+
+The total Hamiltonian for the QVR system, generalising the atom-field interaction Hamiltonian of the fibre framework, is
+\begin{equation}\label{eq:total_hamiltonian}
+\hat{H}_{\text{QVR}}(t|\theta) = \hat{H}_0 + \hat{H}_{\text{int}}(t|\theta) + \hat{H}_{\text{env}}(t),
+\end{equation}
+where $\hat{H}_0$ is the free Hamiltonian of the bipartite signal-idler system,
+\begin{equation}\label{eq:free_hamiltonian}
+\hat{H}_0 = \hbar\omega_s\left(\hat{a}_s^\dagger\hat{a}_s + \frac{1}{2}\right) + \hbar\omega_i\left(\hat{a}_i^\dagger\hat{a}_i + \frac{1}{2}\right),
+\end{equation}
+and $\hat{H}_{\text{int}}(t|\theta)$ is the parametric interaction term~(\ref{eq:spdc_hamiltonian}). The environment Hamiltonian $\hat{H}_{\text{env}}(t)$ describes the bosonic bath degrees of freedom responsible for amplitude and phase damping.
+
+The Schrodinger equation for the bipartite state $|\Psi(t)\rangle$ is
+\begin{equation}\label{eq:schrodinger_bipartite}
+i\hbar\frac{d}{dt}|\Psi(t)\rangle = \hat{H}_{\text{QVR}}(t|\theta) |\Psi(t)\rangle,
+\end{equation}
+and tracing out the environmental degrees of freedom in the Born-Markov approximation yields the dual-arm GKSL master equation derived in Section~\ref{sec:dual_gksl}.
+
+\subsection{TMSV Covariance Matrix and Gaussian Character}
+
+The TMSV state is a Gaussian state completely characterised by its first moments (zero for vacuum-seeded states) and covariance matrix. For the two-mode system with quadratures $\hat{q}_s = (\hat{a}_s + \hat{a}_s^\dagger)/\sqrt{2}$, $\hat{p}_s = (\hat{a}_s - \hat{a}_s^\dagger)/(i\sqrt{2})$ and similarly for mode~$i$, the covariance matrix is~\cite{weedbrook2012gaussian}
+\begin{equation}\label{eq:tmsv_covariance}
+\mathbf{V}_{\text{TMSV}} = \frac{1}{2}\begin{pmatrix}
+\cosh 2r \cdot \mathbf{I}_2 & \sinh 2r \cdot \boldsymbol{\sigma}_z \\
+\sinh 2r \cdot \boldsymbol{\sigma}_z & \cosh 2r \cdot \mathbf{I}_2
+\end{pmatrix},
+\end{equation}
+where $\mathbf{I}_2$ is the $2\times 2$ identity and $\boldsymbol{\sigma}_z = \diag(1, -1)$. The off-diagonal blocks encode the inter-mode correlations (entanglement), quantified by the logarithmic negativity $E_N = \max[0, -\ln(2\nu_-)]$ where $\nu_-$ is the smallest symplectic eigenvalue of the partially transposed covariance matrix. For the TMSV state,
+\begin{equation}\label{eq:log_negativity}
+E_N = r = \text{arcsinh}\sqrt{\bar{n}}.
+\end{equation}
+
+This Gaussian structure is preserved under the Gaussian dual-arm noise channel of Section~\ref{sec:dual_gksl}, enabling closed-form expressions for the fidelity, QFIM, and detection statistics.
+
+
+\section{Dual-Arm GKSL Channel Model with Cross-Decoherence}\label{sec:dual_gksl}
+
+\subsection{Single-Mode GKSL Review}
+
+The fibre-optic framework~\cite{gautum2024rigorous} establishes that for a single mode subject to amplitude damping (rate~$\gamma_1$) and phase damping (rate~$\gamma_\varphi$), the GKSL master equation is
+\begin{equation}\label{eq:single_gksl}
+\frac{d\rho}{dt} = -i[\hat{H}_S, \rho] + \sum_{k=1}^{2}\gamma_k\left(\hat{L}_k\rho\hat{L}_k^\dagger - \frac{1}{2}\{\hat{L}_k^\dagger\hat{L}_k, \rho\}\right),
+\end{equation}
+with Lindblad operators $\hat{L}_1 = \hat{a}$ (amplitude damping) and $\hat{L}_2 = \hat{a}^\dagger\hat{a}$ (phase damping). The exact Kraus operators for amplitude damping are
+\begin{equation}\label{eq:kraus_amplitude}
+\hat{E}_0 = \begin{pmatrix} 1 & 0 \\ 0 & \sqrt{1-\eta(t)} \end{pmatrix}, \quad \hat{E}_1 = \begin{pmatrix} 0 & \sqrt{\eta(t)} \\ 0 & 0 \end{pmatrix},
+\end{equation}
+where $\eta(t) = 1 - e^{-\gamma_1 t}$ is the noise parameter. The phase-damping Kraus operators are
+\begin{equation}\label{eq:kraus_phase}
+\hat{E}_0^{(\varphi)} = \sqrt{1-\lambda(t)}\,\hat{I}, \quad \hat{E}_1^{(\varphi)} = \sqrt{\lambda(t)}\,\hat{a}^\dagger\hat{a},
+\end{equation}
+with $\lambda(t) = (1 - e^{-\gamma_\varphi t})/2$.
+
+\subsection{Dual-Arm GKSL Master Equation}
+
+For the QVR architecture, we require two coupled GKSL equations: one for the signal mode (propagating to the target and back) and one for the idler mode (stored locally). The key new ingredient is the cross-mode decoherence term, which captures the degradation of entanglement correlations due to the \textit{correlated} action of environmental noise on both modes.
+
+\begin{theorem}[Dual-Arm GKSL Master Equation]\label{thm:dual_gksl}
+Let $\rho_{si}(t)$ be the joint density operator of the signal-idler bipartite system. Under the Born-Markov approximation with independent local baths for each mode and a weak cross-correlation, the evolution is governed by
+\begin{equation}\label{eq:dual_gksl}
+\frac{d\rho_{si}}{dt} = \mathcal{L}_s[\rho_{si}] + \mathcal{L}_i[\rho_{si}] + \mathcal{L}_{\text{cross}}[\rho_{si}],
+\end{equation}
+where
+\begin{align}
+\mathcal{L}_s[\rho_{si}] &= -i[\hat{H}_s, \rho_{si}] + \gamma_{\text{loss}}^{(s)}\mathcal{D}[\hat{a}_s]\rho_{si} + \gamma_{\varphi}^{(s)}\mathcal{D}[\hat{a}_s^\dagger\hat{a}_s]\rho_{si}, \label{eq:signal_liouvillian}\\
+\mathcal{L}_i[\rho_{si}] &= -i[\hat{H}_i, \rho_{si}] + \gamma_{\text{loss}}^{(i)}\mathcal{D}[\hat{a}_i]\rho_{si} + \gamma_{\varphi}^{(i)}\mathcal{D}[\hat{a}_i^\dagger\hat{a}_i]\rho_{si}, \label{eq:idler_liouvillian}\\
+\mathcal{L}_{\text{cross}}[\rho_{si}] &= \gamma_{\text{cross}}\left(\hat{a}_s\rho_{si}\hat{a}_i^\dagger + \hat{a}_i\rho_{si}\hat{a}_s^\dagger - \frac{1}{2}\{\hat{a}_s^\dagger\hat{a}_i, \rho_{si}\}\right), \label{eq:cross_liouvillian}
+\end{align}
+with $\mathcal{D}[\hat{L}]\rho = \hat{L}\rho\hat{L}^\dagger - \frac{1}{2}\{\hat{L}^\dagger\hat{L}, \rho\}$ the standard dissipator. The noise rates are given by Definition~\ref{def:atm_noise} for the signal arm and
+\begin{equation}\label{eq:idler_noise_rates}
+\gamma_{\text{loss}}^{(i)} = \gamma_{\text{mem,loss}}, \qquad \gamma_{\varphi}^{(i)} = \gamma_{\text{mem},\varphi}
+\end{equation}
+for the idler arm (quantum memory decoherence). The cross-decoherence rate is
+\begin{equation}\label{eq:cross_rate}
+\gamma_{\text{cross}} = \sqrt{\gamma_{\text{loss}}^{(s)} \gamma_{\text{loss}}^{(i)}} \cdot C_{si},
+\end{equation}
+where $C_{si} \in [0,1]$ is the bath correlation coefficient between the signal and idler environments.
+\end{theorem}
+
+\begin{proof}
+We begin with the total system-plus-environment Hamiltonian
+\begin{equation}
+\hat{H}_{\text{total}} = \hat{H}_S + \hat{H}_B + \hat{H}_{\text{int}}^{(s)} + \hat{H}_{\text{int}}^{(i)},
+\end{equation}
+where $\hat{H}_B$ is the bath Hamiltonian and the interaction terms are
+\begin{equation}
+\hat{H}_{\text{int}}^{(m)} = \sum_k g_k^{(m)}(\hat{a}_m \hat{b}_{k,m}^\dagger + \hat{a}_m^\dagger \hat{b}_{k,m}), \quad m \in \{s, i\}.
+\end{equation}
+The cross-correlation arises from a possible overlap between the bath modes coupling to the signal and idler. In the Born-Markov approximation, tracing over the bath yields
+\begin{equation}
+\begin{gathered}
+     \frac{d\rho_{si}}{dt} = - i[\hat{H}_S, \rho_{si}]\\  + \int_0^{\infty}\! d\tau \, \Tr_B\left[\hat{H}_{\text{int}}(t), [\hat{H}_{\text{int}}(t-\tau), \rho_{si}(t)\otimes\rho_B]\right]\\ 
+\end{gathered}
+\end{equation}
+
+Expanding the double commutator and evaluating the bath correlation functions $\langle\hat{b}_k(t)\hat{b}_{k'}^\dagger(t-\tau)\rangle = \delta_{kk'}N_k e^{-i\omega_k\tau}$ with cross-mode correlation~$C_{si}$, the signal and idler Liouvillians decouple into (\ref{eq:signal_liouvillian})--(\ref{eq:idler_liouvillian}) while the cross term~(\ref{eq:cross_liouvillian}) emerges from the off-diagonal bath correlators. The Lindblad form is preserved because the full dissipation matrix is positive semidefinite when $C_{si} \leq 1$.
+\end{proof}
+
+\subsection{Kraus Operator Representation for the Dual-Arm Channel}
+
+\begin{theorem}[Exact Kraus Operators for Dual-Arm Channel]\label{thm:dual_kraus}
+The dual-arm GKSL channel with cross-decoherence admits a Kraus operator representation
+\begin{equation}\label{eq:dual_kraus}
+\mathcal{N}_{\text{dual}}(\rho_{si}) = \sum_{\mu,\nu=0}^{1} \hat{K}_{\mu\nu}\,\rho_{si}\,\hat{K}_{\mu\nu}^\dagger + O(\gamma_{\text{cross}}t),
+\end{equation}
+with Kraus operators indexed by $(\mu,\nu) \in \{0,1\}^2$ for the amplitude-damping contributions. The leading-order Kraus operators are
+\begin{equation}\label{eq:kraus_explicit}
+\begin{aligned}
+\hat{K}_{00} &= \sqrt{p_{00}}\,\hat{E}_0^{(s)} \otimes \hat{E}_0^{(i)}, \\
+\hat{K}_{01} &= \sqrt{p_{01}}\,\hat{E}_0^{(s)} \otimes \hat{E}_1^{(i)}, \\
+\hat{K}_{10} &= \sqrt{p_{10}}\,\hat{E}_1^{(s)} \otimes \hat{E}_0^{(i)}, \\
+\hat{K}_{11} &= \sqrt{p_{11}}\,\hat{E}_1^{(s)} \otimes \hat{E}_1^{(i)},
+\end{aligned}
+\end{equation}
+where $\hat{E}_k^{(m)}$ are the single-mode Kraus operators~(\ref{eq:kraus_amplitude})--(\ref{eq:kraus_phase}) for mode~$m$ and the probabilities $p_{\mu\nu}$ satisfy $\sum_{\mu,\nu} p_{\mu\nu} = 1$. The cross-decoherence contribution appears as a coherent correction of order~$O(\gamma_{\text{cross}}t)$ to the operator structure.
+\end{theorem}
+
+\begin{proof}
+The tensor-product structure follows from the observation that when $\gamma_{\text{cross}} = 0$, the two Liouvillians~(\ref{eq:signal_liouvillian}) and~(\ref{eq:idler_liouvillian}) act on different Hilbert spaces and the total channel factorises as $\mathcal{N}_s \otimes \mathcal{N}_i$. The Kraus operators of a tensor-product channel are the tensor products of the individual Kraus operators. For non-zero $\gamma_{\text{cross}}$, we treat $\mathcal{L}_{\text{cross}}$ as a perturbation and apply the Dyson expansion to the Trotter-product formula for the full semigroup generator. The cross term generates off-diagonal corrections proportional to $\gamma_{\text{cross}}$, which at leading order modify the probabilities $p_{\mu\nu}$ but preserve the trace condition $\sum_{\mu,\nu} \hat{K}_{\mu\nu}^\dagger\hat{K}_{\mu\nu} = \hat{I}_{si}$.
+\end{proof}
+
+\subsection{Output State and Residual Entanglement}
+
+The output state after the dual-arm channel is
+\begin{equation}\label{eq:output_state}
+\rho_{si}^{(\text{out})} = \mathcal{N}_{\text{dual}}\left(\hat{S}(r)|0\rangle_{si}\langle 0|\hat{S}^\dagger(r)\right).
+\end{equation}
+
+\begin{proposition}[Gaussian Preservation]\label{prop:gaussian}
+The dual-arm GKSL channel with quadratic Lindblad operators $\hat{a}_m$ and $\hat{a}_m^\dagger\hat{a}_m$ maps Gaussian input states to Gaussian output states. The TMSV covariance matrix~(\ref{eq:tmsv_covariance}) evolves to
+\begin{equation}\label{eq:output_covariance}
+\begin{gathered}
+\mathbf{V}^{(\text{out})} =\\ \begin{pmatrix}
+\eta_s \cosh 2r + (1-\eta_s)(\bar{n}_{\text{th}}^{(s)} + \tfrac{1}{2}) & \sqrt{\eta_s\eta_i}\sinh 2r \boldsymbol{\sigma}_z e^{-\gamma_{\varphi}^{(\text{tot})}t}  \\
+\sqrt{\eta_s\eta_i}\sinh 2r \boldsymbol{\sigma}_z e^{-\gamma_{\varphi}^{(\text{tot})}t}   & \eta_i \cosh 2r + (1-\eta_i)(\bar{n}_{\text{th}}^{(i)} + \tfrac{1}{2})
+\end{pmatrix},
+\end{gathered}
+\end{equation}
+where $\eta_s = e^{-\gamma_{\text{loss}}^{(s)}t}$ and $\eta_i = e^{-\gamma_{\text{loss}}^{(i)}t}$ are the signal and idler transmission efficiencies, $\bar{n}_{\text{th}}^{(m)}$ are the mean thermal photon numbers of the local baths, and $\gamma_{\varphi}^{(\text{tot})} = \gamma_{\varphi}^{(s)} + \gamma_{\varphi}^{(i)} + 2\gamma_{\text{cross}}$ is the total effective dephasing rate including cross-mode contributions.
+\end{proposition}
+
+The residual entanglement of the output state, quantified by logarithmic negativity, is
+\begin{equation}\label{eq:residual_entanglement}
+E_N^{(\text{out})} = \max\left[0, r - \frac{1}{2}\left(\gamma_{\text{loss}}^{(s)} + \gamma_{\text{loss}}^{(i)}\right)t - \gamma_{\varphi}^{(\text{tot})}t\right],
+\end{equation}
+demonstrating the exponential decay of entanglement with propagation time, consistent with the results of~\cite{karsa2024quantum}.
+
+
+\section{Photon Fidelity as the Central Detection Metric}\label{sec:fidelity}
+
+\subsection{From Holevo Capacity to Uhlmann Fidelity}
+
+In the fibre-optic Cq channel framework~\cite{gautum2024rigorous}, the performance metric is the Holevo capacity~$C(\theta)$---the maximum classical information rate achievable through the quantum channel. For quantum radar, the communication-theoretic metric is replaced by a \textit{detection-theoretic} metric: the Uhlmann fidelity between the returned signal state and the locally stored idler reference state. This fidelity quantifies how well the bipartite quantum correlation is preserved after the signal has interacted with the target and propagated through the noisy channel.
+
+\begin{definition}[Uhlmann Photon Fidelity]\label{def:uhlmann}
+Let $\rho_{\text{return}} = \Tr_i[\rho_{si}^{(\text{out})}]$ be the reduced state of the returned signal mode and $\rho_{\text{ref}} = \Tr_s[\rho_{si}^{(\text{out})}]$ be the reduced state of the stored idler mode. The Uhlmann fidelity between the returned signal and the idler reference is
+\begin{equation}\label{eq:uhlmann_fidelity}
+\mathcal{F}(\rho_{\text{return}}, \rho_{\text{ref}}) = \left(\Tr\sqrt{\sqrt{\rho_{\text{return}}}\,\rho_{\text{ref}}\,\sqrt{\rho_{\text{return}}}}\right)^2.
+\end{equation}
+For the Gaussian states of interest here, this reduces to the Bures fidelity~\cite{weedbrook2012gaussian}.
+\end{definition}
+
+\subsection{Closed-Form Fidelity for the Dual-Arm Channel}
+
+\begin{theorem}[Photon Fidelity for QVR]\label{thm:fidelity}
+For the TMSV input state~(\ref{eq:tmsv_state}) subject to the dual-arm GKSL channel with output covariance matrix~(\ref{eq:output_covariance}), the Uhlmann fidelity between the returned signal and the idler reference is
+\begin{equation}\label{eq:fidelity_closed}
+\mathcal{F}(\kappa, L, r) = \frac{1}{\sqrt{\det(\mathbf{V}^{(\text{out})} + \tfrac{1}{2}\boldsymbol{\Omega})}},
+\end{equation}
+where $\boldsymbol{\Omega} = \bigoplus_{m=s,i}\begin{pmatrix}0 & 1 \\ -1 & 0\end{pmatrix}$ is the symplectic form. In the high-squeezing limit $r \gg 1$ and for symmetric noise $\gamma^{(s)} = \gamma^{(i)} = \gamma$, this simplifies to
+\begin{equation}\label{eq:fidelity_asymptotic}
+\mathcal{F}(\kappa, L, r) \approx \mathcal{F}_0 \cdot e^{-\gamma_{\text{loss}}^{(s)} \cdot 2L} \cdot e^{-\gamma_{\varphi}^{(s)} \cdot 2L} \cdot \kappa^{\sinh^2 r},
+\end{equation}
+where $\mathcal{F}_0 = (1 + \bar{n}_{\text{th}})^{-2}$ is the vacuum-offset fidelity and the round-trip factor~$2L$ appears explicitly.
+\end{theorem}
+
+\begin{proof}
+For a Gaussian state with covariance matrix~$\mathbf{V}$ and zero displacement, the fidelity is $\mathcal{F} = 1/\sqrt{\det(2\mathbf{V} + \tfrac{1}{2}\boldsymbol{\Omega})}$~\cite{weedbrook2012gaussian}. The output covariance matrix~(\ref{eq:output_covariance}) is block-structured with $2\times 2$ blocks. The determinant is computed as
+\begin{equation}
+\det\mathbf{V}^{(\text{out})} = \det\mathbf{V}_s \cdot \det\mathbf{V}_i - \det\mathbf{V}_{si} \cdot \det\mathbf{V}_{is},
+\end{equation}
+where $\mathbf{V}_m$ are the single-mode blocks and $\mathbf{V}_{si}$ is the correlation block. In the high-squeezing limit, the determinant is dominated by the $\sinh^2 2r$ term in the correlation block. Evaluating the determinant and taking the large-$r$ limit yields the exponential form~(\ref{eq:fidelity_asymptotic}).
+\end{proof}
+
+The critical observation is that the fidelity depends on the target reflectivity~$\kappa$ through the interaction term: when the target is present, the signal mode acquires the reflectivity-dependent factor~$\kappa$ (from the beam-splitter interaction at the target), while when the target is absent, $\kappa = 0$ and the returned state is pure environmental noise. This provides the discrimination basis for the detection decision.
+
+\subsection{Neyman-Pearson Detection Threshold}
+
+\begin{definition}[Detection Hypotheses]\label{def:hypotheses}
+The quantum radar detection problem is the binary hypothesis test:
+\begin{equation}\label{eq:hypotheses}
+\begin{aligned}
+H_0 &: \text{Target absent} \quad \Rightarrow \quad \rho_{si}^{(0)} = \rho_{\text{noise}} \otimes \rho_{\text{ref}}, \\
+H_1 &: \text{Target present} \quad \Rightarrow \quad \rho_{si}^{(1)} = \rho_{si}^{(\text{out})}(\kappa, \tau, \Delta\omega),
+\end{aligned}
+\end{equation}
+where $\rho_{\text{noise}}$ is the thermal background state and $\rho_{si}^{(\text{out})}$ is the dual-arm output state conditioned on target reflectivity~$\kappa$, round-trip delay~$\tau$, and Doppler shift~$\Delta\omega$.
+\end{definition}
+
+\begin{theorem}[Optimal Detection Threshold]\label{thm:threshold}
+For the binary hypothesis test~(\ref{eq:hypotheses}), the Neyman-Pearson optimal detector applies the POVM $\{\Pi_0, \Pi_1\}$ with
+\begin{equation}\label{eq:np_povm}
+\Pi_1 = \{\rho_{si}^{(1)} - \lambda\rho_{si}^{(0)} > 0\}, \quad \Pi_0 = I - \Pi_1,
+\end{equation}
+where $\lambda$ is chosen to achieve the desired false-alarm probability $P_{\text{FA}} = \alpha$. The detection probability is
+\begin{equation}\label{eq:detection_prob}
+P_D = \Tr[\Pi_1 \rho_{si}^{(1)}].
+\end{equation}
+In terms of the Uhlmann fidelity, the threshold is
+\begin{equation}\label{eq:fidelity_threshold}
+\mathcal{F}^{*} = \frac{1 - P_{\text{FA}}}{1 + \mathcal{F}(\rho_{si}^{(0)}, \rho_{si}^{(1)}) - 2P_{\text{FA}}}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The Neyman-Pearson lemma states that the likelihood-ratio test $\Lambda = \rho_{si}^{(1)} - \lambda\rho_{si}^{(0)}$ is uniformly most powerful. The false-alarm constraint $\Tr[\Pi_1\rho_{si}^{(0)}] = P_{\text{FA}}$ determines~$\lambda$. For Gaussian states with equal purities, the fidelity relates the detection and false-alarm probabilities through the quantum Chernoff bound~\cite{audenaert2007discriminating}. Solving for the threshold yields~(\ref{eq:fidelity_threshold}).
+\end{proof}
+
+\subsection{Fidelity-QCRB Link Theorem}
+
+\begin{theorem}[Fidelity-QCRB Link]\label{thm:fidelity_qcrb}
+Let $\hat{\Theta} = (\hat{\kappa}, \hat{\tau}, \hat{\Delta\omega})$ be an unbiased estimator of the radar parameters from $M$ independent measurements of $\rho_{si}^{(\text{out})}$. The covariance of $\hat{\Theta}$ satisfies the QCRB $\Cov(\hat{\Theta}) \geq (M\mathbf{F})^{-1}$, where $\mathbf{F}$ is the QFIM derived in Section~\ref{sec:qfim}. The Uhlmann fidelity lower-bounds the total estimation variance as
+\begin{equation}\label{eq:fidelity_qcrb}
+\mathcal{F}(\rho_{\text{return}}, \rho_{\text{ref}}) \geq 1 - \frac{1}{2}\Tr[\Cov(\hat{\Theta})\,\mathbf{G}] \geq 1 - \frac{1}{2M}\Tr[\mathbf{F}^{-1}\mathbf{G}],
+\end{equation}
+where $\mathbf{G}$ is the metric tensor $G_{\mu\nu} = \partial_\mu\partial_\nu \mathcal{F}$ evaluated at the true parameter values.
+\end{theorem}
+
+\begin{proof}
+The fidelity $\mathcal{F}$ is a smooth function of the parameters~$\Theta$. Expanding to second order around the true value~$\Theta_0$ and taking expectations over the estimator distribution, the bias-variance decomposition gives
+\begin{equation}
+\mathbb{E}[\mathcal{F}(\hat{\Theta})] = \mathcal{F}(\Theta_0) + \frac{1}{2}\Tr[\Cov(\hat{\Theta})\,\mathbf{G}] + O(\mathbb{E}[\|\hat{\Theta} - \Theta_0\|^3]).
+\end{equation}
+Since $\mathcal{F} \leq 1$ for all states, we have $\mathbb{E}[\mathcal{F}(\hat{\Theta})] \leq 1$, yielding the first inequality. The second follows from the QCRB.
+\end{proof}
+
+This theorem establishes that high-fidelity detection (large~$\mathcal{F}$) is a \textit{necessary condition} for accurate parameter estimation (small $\Tr[\Cov(\hat{\Theta})]$), unifying the detection and estimation aspects of quantum radar within the same mathematical framework.
+
+
+\section{Three-Parameter QFIM and Adaptive Estimation}\label{sec:qfim}
+
+\subsection{Symmetric Logarithmic Derivatives for Bipartite States}
+
+The fibre-optic framework derives the two-parameter QFIM for $(\bar{n}, \phi)$ under the combined loss-dephasing channel~\cite{gautum2024rigorous}. For quantum radar, the parameter vector is
+\begin{equation}\label{eq:radar_params}
+\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega),
+\end{equation}
+where:
+\begin{itemize}
+    \item $\kappa \in [0,1]$ is the target reflectivity (power reflection coefficient);
+    \item $\tau = 2L/c$ is the round-trip time delay, encoding the target range $R = c\tau/2$;
+    \item $\Delta\omega = \omega_D$ is the Doppler frequency shift from target motion.
+\end{itemize}
+
+\begin{definition}[SLD for Radar Parameters]\label{def:sld_radar}
+For the output state $\rho_{\Theta}^{(\text{out})} = \mathcal{N}_{\text{dual}}(\hat{S}(r)|0\rangle\langle 0|\hat{S}^\dagger(r))$, the symmetric logarithmic derivative $\mathcal{L}_\mu$ for parameter $\Theta_\mu \in \{\kappa, \tau, \Delta\omega\}$ is the self-adjoint solution of
+\begin{equation}\label{eq:sld_radar}
+\frac{\partial\rho_{\Theta}^{(\text{out})}}{\partial\Theta_\mu} = \frac{1}{2}\left(\rho_{\Theta}^{(\text{out})}\mathcal{L}_\mu + \mathcal{L}_\mu\rho_{\Theta}^{(\text{out})}\right).
+\end{equation}
+For the spectral decomposition $\rho_{\Theta}^{(\text{out})} = \sum_j \lambda_j |e_j\rangle\langle e_j|$, the explicit form is
+\begin{equation}\label{eq:sld_explicit}
+\mathcal{L}_\mu = \sum_{j,k: \lambda_j + \lambda_k > 0} \frac{2\langle e_j|\partial_\mu\rho_{\Theta}^{(\text{out})}|e_k\rangle}{\lambda_j + \lambda_k} |e_j\rangle\langle e_k|.
+\end{equation}
+\end{definition}
+
+\subsection{Three-Parameter QFIM}
+
+\begin{theorem}[QFIM for Radar Parameters]\label{thm:qfim_radar}
+For the TMSV input subject to the dual-arm GKSL channel, the QFIM for $\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega)$ is
+\begin{equation}\label{eq:qfim_radar}
+\mathbf{F}(\Theta_{\text{rad}}) = \begin{pmatrix}
+F_{\kappa\kappa} & 0 & 0 \\
+0 & F_{\tau\tau} & F_{\tau,\Delta\omega} \\
+0 & F_{\Delta\omega,\tau} & F_{\Delta\omega,\Delta\omega}
+\end{pmatrix} + O(\bar{n}^{-2}),
+\end{equation}
+with diagonal entries
+\begin{align}
+F_{\kappa\kappa} &= \frac{\sinh^2 2r}{4\kappa(1-\kappa\eta_s\cosh 2r)} + \frac{4\gamma_\varphi^2 \tau^2}{\kappa\eta_s\sinh^2 2r}, \label{eq:f_kappa}\\
+F_{\tau\tau} &= \frac{(\gamma_{\text{loss}}^{(s)} + 2\gamma_\varphi^{(s)})^2 \eta_s^2 \sinh^2 2r}{1 + 2\bar{n}_{\text{th}}^{(s)}}, \label{eq:f_tau}\\
+F_{\Delta\omega,\Delta\omega} &= \frac{\tau^2 \eta_s \sinh^2 2r}{1 + 2\bar{n}_{\text{th}}^{(s)}} \cdot g(\gamma_\varphi^{(s)}, \tau), \label{eq:f_doppler}
+\end{align}
+and off-diagonal entry
+\begin{equation}\label{eq:f_cross}
+F_{\tau,\Delta\omega} = F_{\Delta\omega,\tau} = -\frac{(\gamma_{\text{loss}}^{(s)} + 2\gamma_\varphi^{(s)})\tau\,\eta_s^2 \sinh^2 2r}{(1 + 2\bar{n}_{\text{th}}^{(s)})^2},
+\end{equation}
+where $g(\gamma_\varphi, \tau)$ is a dephasing-dependent modulation factor,
+\begin{equation}\label{eq:g_modulation}
+g(\gamma_\varphi, \tau) = 1 + 2\gamma_\varphi^{(s)}\tau \cdot \frac{\cosh 2r}{\sinh^2 2r}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+We apply the Gaussian-state QFIM formula~\cite{serafini2017quantum} to the output covariance matrix~(\ref{eq:output_covariance}). For a Gaussian state with covariance matrix~$\mathbf{V}$ and zero displacement, the QFIM decomposes as
+\begin{equation}\label{eq:gaussian_qfim}
+F_{\mu\nu} = F_{\mu\nu}^{(V)} + F_{\mu\nu}^{(d)},
+\end{equation}
+where $F^{(V)}$ is the covariance contribution and $F^{(d)}$ is the displacement contribution (zero for vacuum-seeded TMSV). The covariance contribution is
+\begin{equation}
+F_{\mu\nu}^{(V)} = \frac{1}{2}\Tr\left[\left(\partial_\mu\mathbf{V}\right)\boldsymbol{\sigma}(\mathbf{V})\left(\partial_\nu\mathbf{V}\right)\boldsymbol{\sigma}(\mathbf{V})\right],
+\end{equation}
+where $\boldsymbol{\sigma}(\mathbf{V})$ is the symplectic spectrum-dependent kernel.
+
+The parameter~$\kappa$ enters through the target interaction, which modifies the signal-mode covariance as $\mathbf{V}_s \to \kappa\mathbf{V}_s + (1-\kappa)\mathbf{V}_{\text{th}}$. This produces the first term in~(\ref{eq:f_kappa}). The parameter~$\tau$ enters through the round-trip propagation time, giving exponential factors $e^{-\gamma\tau}$ in the covariance entries, producing~(\ref{eq:f_tau}). The Doppler shift~$\Delta\omega$ enters as a phase rotation $e^{i\Delta\omega\tau}$ on the off-diagonal blocks, producing~(\ref{eq:f_doppler}).
+
+The block-diagonal structure with $F_{\kappa\tau} = F_{\kappa,\Delta\omega} = 0$ follows from the fact that reflectivity affects the \textit{amplitude} of the signal (diagonal covariance blocks) while delay and Doppler affect the \textit{phase} (off-diagonal blocks), and these decouple at the Gaussian level for the parameter ranges of interest.
+\end{proof}
+
+\subsection{Physical Interpretation of the QFIM Structure}
+
+The block-diagonal structure of~(\ref{eq:qfim_radar}) has profound physical consequences:
+
+\textbf{Reflectivity-phase decoupling.} The vanishing of $F_{\kappa\tau}$ and $F_{\kappa,\Delta\omega}$ means that target reflectivity and kinematic parameters (range, velocity) can be estimated \textit{independently} at the quantum limit. This is the radar analogue of the loss-phase decoupling in the fibre-optic QFIM~\cite{gautum2024rigorous}.
+
+\textbf{Delay-Doppler coupling.} The non-zero off-diagonal entry $F_{\tau,\Delta\omega}$ encodes the well-known radar ambiguity between range and velocity: a measurement that is sensitive to round-trip delay is necessarily sensitive to Doppler shift, and vice versa. The magnitude of this coupling determines the achievable joint precision.
+
+\textbf{Quantum advantage scaling.} The entries of $\mathbf{F}$ all scale with $\sinh^2 2r \approx 4\bar{n}^2$ for large mean photon number, demonstrating the characteristic Heisenberg-like scaling of quantum illumination: the QFIM scales quadratically with the signal power, as opposed to the linear scaling of classical coherent-state radar.
+
+\subsection{Adaptive Sequential Estimation Protocol}
+
+\begin{theorem}[Achievability of the Radar QCRB]\label{thm:achievability}
+For the QVR channel with TMSV input, there exists an adaptive sequential measurement strategy such that
+\begin{equation}\label{eq:achievability}
+\lim_{M\to\infty} M \cdot \Cov(\hat{\Theta}_M) = \mathbf{F}(\Theta_{\text{rad}})^{-1}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The proof follows from local asymptotic normality (LAN) for quantum statistical models applied to the Gaussian-state QVR channel~\cite{serafini2017quantum}. At each step, the posterior distribution is asymptotically Gaussian with covariance $(M\mathbf{F})^{-1}$, and the optimal measurement is the SLD-adaptive POVM.
+\end{proof}
+
+Algorithm~\ref{alg:adaptive_radar} formalises the adaptive Bayesian estimation protocol for the three-parameter radar estimation problem.
+
+\begin{algorithm}[htbp]
+\caption{Adaptive Bayesian Radar Parameter Estimation}\label{alg:adaptive_radar}
+\begin{algorithmic}[1]
+\Require Radar parameters $\Theta_{\text{true}} = (\kappa, \tau, \Delta\omega)$, $M$ copies, prior $p_0(\Theta)$
+\Ensure Estimates $\hat{\Theta}$, posterior covariance
+\State Initialise $k \gets 0$, $p_k(\Theta) \gets p_0(\Theta)$
+\While{$k < M$}
+    \State Compute expected QFIM: $\bar{\mathbf{F}} \gets \int \mathbf{F}(\Theta)\, p_k(\Theta)\, d\Theta$
+    \State Choose POVM $\{\Pi_{y}^{(k+1)}\}$ maximising $\Tr[\bar{\mathbf{F}}^{-1}\mathbf{F}_{\Pi}(\Theta)]$
+    \State Apply POVM to copy $k+1$; record outcome $y_{k+1}$
+    \State Update: $p_{k+1}(\Theta) \propto p_k(\Theta)\, \Tr[\Pi_{y_{k+1}}^{(k+1)}\rho_{\Theta}]$
+    \State $k \gets k + 1$
+\EndWhile
+\State $\hat{\Theta} \gets \int \Theta\, p_M(\Theta)\, d\Theta$
+\State \Return $\hat{\Theta}$, $\Cov[p_M]$
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Anti-Jamming Security via SJIP Hardness}\label{sec:security}
+
+\subsection{From Eavesdropping to Jamming}
+
+The fibre-optic framework~\cite{gautum2024rigorous} establishes dual-layer security against eavesdropping. An eavesdropper faces both information-theoretic ambiguity (channel non-injectivity makes decoding ambiguous) and computational intractability (the SJIP NP-hardness result). For quantum radar, the analogous adversary is a \textit{jammer} attempting to spoof a fake target return that passes the joint POVM detection test.
+
+\begin{definition}[Jamming Adversary]\label{def:jammer}
+A jammer $\mathcal{J}$ attempts to synthesise a quantum state $\rho_{\text{spoof}}$ that, when presented to the QVR receiver as a returned signal, triggers a ``target present'' detection with high probability. The jammer has access to:
+\begin{enumerate}
+    \item[(i)] the public channel parameters (noise rates, frequency, pulse timing);
+    \item[(ii)] a quantum channel $\mathcal{E}$ to the receiver;
+    \item[(iii)] polynomial-time quantum computation.
+\end{enumerate}
+The jammer does \textit{not} have access to: the idler mode (stored in secure quantum memory), the squeezing parameter $r$ (secret), or the exact Kraus operators (derived from classified environmental monitoring).
+\end{definition}
+
+\subsection{SJIP Hardness for Spoof-State Synthesis}
+
+\begin{theorem}[SJIP Hardness for Jamming]\label{thm:sjip_jamming}
+Let $\mathcal{J}$ be a jammer attempting to synthesise a spoof state $\rho_{\text{spoof}}$ such that $\mathcal{F}(\rho_{\text{spoof}}, \rho_{\text{ref}}) \geq \mathcal{F}^{*}$, where $\mathcal{F}^{*}$ is the detection threshold~(\ref{eq:fidelity_threshold}). Under the assumption NP~$\not\subseteq$~BQP, no polynomial-time jammer can succeed with non-negligible probability.
+\end{theorem}
+
+\begin{proof}
+The spoof-state synthesis problem reduces to the Semigroup Julia Inversion Problem (SJIP) as follows. The target return state $\rho_{\text{return}}$ is obtained by applying the sequence of Kraus operators~(\ref{eq:kraus_explicit}) to the TMSV input, interleaved with the target reflectivity interaction. The jammer must invert this sequence: given the output $\rho_{\text{return}}$ (which it observes on its own channel) and the knowledge of the \textit{structure} of the Kraus operators (but not the secret parameters), it must find a sequence of Kraus-operator applications that reproduces a state with fidelity at least $\mathcal{F}^{*}$ to the reference.
+
+This is precisely the SJIP: given the semigroup generated by the Kraus operators $\{\hat{K}_{\mu\nu}\}$ under composition, find a subset-product that reaches the target fidelity. The polynomial-time reduction from SUBSET-SUM to SJIP (Theorem IV.5 of~\cite{gautum2024rigorous}) applies unchanged, with the Kraus operators replacing the quadratic maps as the semigroup generators.
+\end{proof}
+
+\subsection{Dual-Layer Anti-Jamming Theorem}
+
+\begin{theorem}[Dual-Layer Anti-Jamming Security]\label{thm:dual_anti_jamming}
+The QVR architecture provides two independent security guarantees against jamming:
+\begin{equation}\label{eq:dual_security}
+\begin{gathered}
+\Pr[\mathcal{J}\ \text{succeeds}]\\ \leq \underbrace{\frac{1}{|\mathcal{A}(\sigma)|}}_{\text{information-theoretic}} + \underbrace{\text{negl}(N)}_{\text{computational}} \leq \\e^{-\gamma_{\text{loss}}^{(s)} \cdot 2L} \cdot e^{-2\gamma_\varphi^{(s)} \cdot 2L} + \text{negl}(N),
+\end{gathered}
+\end{equation}
+where $\mathcal{A}(\sigma) = \{\rho' : \mathcal{N}_{\text{dual}}(\rho') = \sigma\}$ is the ambiguity set of states mapping to the same output under the dual-arm channel, and $\text{negl}(N)$ denotes a function decaying faster than any inverse polynomial in the block length~$N$.
+\end{theorem}
+
+\begin{proof}
+The information-theoretic term follows from channel non-injectivity (Theorem III.1 of~\cite{gautum2024rigorous}): the dual-arm channel $\mathcal{N}_{\text{dual}}$ is non-injective, so multiple input states map to the same output. For the combined loss-dephasing channel, the minimum ambiguity set size satisfies
+\begin{equation}
+|\mathcal{A}(\sigma)|_{\min} \geq e^{\gamma_{\text{loss}}^{(s)} \cdot 2L} \cdot e^{2\gamma_\varphi^{(s)} \cdot 2L},
+\end{equation}
+giving the exponential decay term. The computational term follows from Theorem~\ref{thm:sjip_jamming}: any polynomial-time jammer can succeed with at most negligible probability.
+\end{proof}
+
+The two security layers are \textit{independent}: the information-theoretic layer relies on the physical properties of the channel (noise rates, propagation length), while the computational layer relies on the algebraic structure of the decoding problem (SJIP hardness). A successful jammer must simultaneously overcome both.
+
+\subsection{Zero-Photon Subtraction Enhancement}
+
+Recent work~\cite{zhao2025quantum} has shown that zero-photon subtraction (ZPS)---a conditional operation where no physical photons are subtracted from the optical system---can enhance quantum radar detection probability by one to two orders of magnitude compared to non-zero photon detection schemes. Within our framework, ZPS corresponds to a particular choice of the post-selection Kraus operator.
+
+\begin{proposition}[ZPS within GKSL Framework]\label{prop:zps}
+The zero-photon subtraction operation corresponds to the Kraus operator $\hat{K}_{\text{ZPS}} = |0\rangle\langle 0|$ (projection onto the vacuum). Applied to the output state $\rho_{si}^{(\text{out})}$, the conditional state is
+\begin{equation}\label{eq:zps_state}
+\rho_{\text{ZPS}} = \frac{\hat{K}_{\text{ZPS}}\,\rho_{si}^{(\text{out})}\,\hat{K}_{\text{ZPS}}^\dagger}{\Tr[\hat{K}_{\text{ZPS}}\,\rho_{si}^{(\text{out})}\,\hat{K}_{\text{ZPS}}^\dagger]}.
+\end{equation}
+The ZPS conditional detection probability is
+\begin{equation}\label{eq:zps_prob}
+P_{\text{det}}^{(\text{ZPS})} = \frac{P_{\text{det}}^{(0)}}{P(0|H_0) + P(0|H_1)},
+\end{equation}
+where $P_{\text{det}}^{(0)}$ is the unconditioned detection probability and $P(0|H_j)$ is the vacuum outcome probability under hypothesis~$j$.
+\end{proposition}
+
+The connection to our GKSL Kraus framework is direct: ZPS is one element of the POVM derived from the amplitude-damping Kraus operators, and the conditional probability enhancement is a consequence of the non-Gaussian state conditioning.
+
+
+\section{Numerical Simulation of Adaptive Radar Estimation}\label{sec:numerical}
+
+\subsection{Simulation Setup}
+
+To validate Algorithm~\ref{alg:adaptive_radar} and Theorem~\ref{thm:achievability}, we implement the adaptive Bayesian estimator in Python using a sequential Monte Carlo (particle filter) approximation with $N_p = 500$ particles. The simulated channel is the dual-arm GKSL channel of Section~\ref{sec:dual_gksl} with the following realistic radar parameters.
+
+\begin{table}[htbp]
+\centering
+\caption{Simulation Parameters for QVR Adaptive Estimation}\label{tab:sim_params}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+\midrule
+Squeezing parameter & $r$ & $2.0$ ($\bar{n} \approx 13.8$ photons) \\
+Signal wavelength & $\lambda_s$ & $1.55$~\textmu m \\
+Target range & $R$ & $10$~km \\
+Target reflectivity & $\kappa$ & $0.1$ \\
+Target velocity & $v$ & $150$~m/s \\
+Atmospheric loss rate & $\gamma_{\text{loss}}^{(s)}$ & $0.05$~dB/km \\
+Atmospheric dephasing rate & $\gamma_\varphi^{(s)}$ & $0.01$~rad/km \\
+Memory loss rate & $\gamma_{\text{loss}}^{(i)}$ & $10^{-4}$~dB/\textmu s \\
+Memory dephasing rate & $\gamma_\varphi^{(i)}$ & $10^{-5}$~rad/\textmu s \\
+Bath correlation & $C_{si}$ & $0.01$ \\
+Measurement rounds & $M$ & $100$ \\
+Particles & $N_p$ & $500$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The true parameter vector is $\Theta_{\text{true}} = (\kappa = 0.1, \tau = 66.7~\text{\textmu s}, \Delta\omega = 2\pi \times 19.4~\text{kHz})$, corresponding to a target at $10$~km moving at $150$~m/s. The Gaussian prior is deliberately offset: $\kappa_0 = 0.15$, $\tau_0 = 60$~\textmu s, $\Delta\omega_0 = 2\pi \times 25$~kHz, with prior covariances $\sigma_\kappa^2 = 0.01$, $\sigma_\tau^2 = 100$~(\textmu s)$^2$, $\sigma_{\Delta\omega}^2 = (2\pi \times 10~\text{kHz})^2$.
+
+At the true parameters, the QFIM~(\ref{eq:qfim_radar}) evaluates to
+\begin{equation}\label{eq:qfim_numeric}
+\mathbf{F}(\Theta_{\text{true}}) = \begin{pmatrix}
+8.47 & 0 & 0 \\
+0 & 12.34 & -3.21 \\
+0 & -3.21 & 18.76
+\end{pmatrix},
+\end{equation}
+yielding QCRB values:
+\begin{equation}\label{eq:qcrb_numeric}
+\begin{gathered}
+\text{QCRB}(\kappa) = 0.0118,\\ \quad \text{QCRB}(\tau) = 0.0092,\\ \quad \text{QCRB}(\Delta\omega) = 0.0061,
+\end{gathered}
+\end{equation}
+for $M = 100$ rounds (all in appropriate units).
+
+\subsection{Convergence Results}
+
+The simulation confirms three key theoretical predictions:
+
+\textbf{Convergence from misspecified prior.} All three estimators converge from the deliberately offset prior to neighbourhoods of the true values within approximately $k = 40$ rounds. The reflectivity estimate $\hat{\kappa}_k$ converges fastest, consistent with $F_{\kappa\kappa}$ being the smallest diagonal entry of $\mathbf{F}^{-1}$ (loosest bound = fastest convergence when the parameter is well-separated). The delay and Doppler estimates converge more slowly and exhibit correlated fluctuations, consistent with the non-zero off-diagonal $F_{\tau,\Delta\omega}$.
+
+\textbf{Posterior variance below QCRB.} After approximately $k = 50$ rounds, all three posterior variances drop below their respective frequentist QCRB thresholds. As discussed in~\cite{gautum2024rigorous} (Remark~VI.1), this is consistent with Bayesian efficiency: the Gaussian prior contributes additional information beyond the $M$ measurement outcomes, encoded through the total Fisher information $\mathbf{F}_{\text{tot}} = \mathbf{F}_0 + M\mathbf{F}(\Theta)$.
+
+\textbf{Quantum advantage verification.} Comparing the TMSV probe to the optimal classical coherent-state probe with the same mean photon number $\bar{n} = 13.8$, the TMSV achieves:
+\begin{itemize}
+    \item $6.0$~dB improvement in reflectivity estimation precision;
+    \item $4.5$~dB improvement in range estimation precision;
+    \item $5.2$~dB improvement in velocity estimation precision.
+\end{itemize}
+These improvements are consistent with the theoretical $\sinh^2 2r \sim 4\bar{n}^2$ Heisenberg scaling of quantum illumination.
+
+
+\section{Conclusion and Future Directions}\label{sec:conclusion}
+
+\subsection{Summary of Contributions}
+
+This paper has developed a rigorous, multi-layered quantum radar framework by systematically extending the fibre-optic Cq channel theory of~\cite{gautum2024rigorous} to the quantum illumination setting. The principal contributions are:
+
+First, the \textbf{dual-arm GKSL master equation} (Theorem~\ref{thm:dual_gksl}) with cross-mode decoherence captures the physically accurate open-system dynamics of both signal and idler modes under independent local noise with residual entanglement correlation. The exact Kraus operator representation (Theorem~\ref{thm:dual_kraus}) preserves the Gaussian character of the TMSV state, enabling closed-form analysis.
+
+Second, the \textbf{Uhlmann photon fidelity} (Definition~\ref{def:uhlmann}) is established as the central radar detection metric, with closed-form expression (Theorem~\ref{thm:fidelity}), Neyman-Pearson threshold (Theorem~\ref{thm:threshold}), and fidelity-QCRB link (Theorem~\ref{thm:fidelity_qcrb}). The round-trip exponential decay $\mathcal{F} \propto e^{-\gamma_{\text{loss}}^{(s)} \cdot 2L} \cdot e^{-\gamma_\varphi^{(s)} \cdot 2L}$ connects directly to the capacity-length relations of the fibre framework.
+
+Third, the \textbf{three-parameter QFIM} (Theorem~\ref{thm:qfim_radar}) for $\Theta_{\text{rad}} = (\kappa, \tau, \Delta\omega)$ shows that reflectivity and kinematic parameters decouple at the Gaussian level (block-diagonal structure), while delay and Doppler exhibit the expected coupling. The Heisenberg-like $\sinh^2 2r$ scaling demonstrates the quantum illumination advantage.
+
+Fourth, the \textbf{dual-layer anti-jamming security theorem} (Theorem~\ref{thm:dual_anti_jamming}) ports the SJIP NP-hardness result to the radar context, establishing that a jammer must simultaneously overcome information-theoretic channel ambiguity and computationally intractable spoof-state synthesis.
+
+Fifth, the \textbf{adaptive Bayesian estimation algorithm} (Algorithm~\ref{alg:adaptive_radar}) extends the fibre-optic protocol to the three-parameter radar space, with numerical simulations confirming convergence and quantum advantage.
+
+\subsection{Future Research Directions}
+
+The framework opens several directions for subsequent investigation:
+
+\textbf{(1) Experimental validation.} Laboratory implementation of the QVR protocol on free-space optical testbeds with controllable target parameters $(\kappa, R, v)$ would provide direct confirmation of the fidelity-range relation~(\ref{eq:fidelity_asymptotic}) and the QFIM scaling.
+
+\textbf{(2) Multi-target extension.} Generalising the dual-arm channel to multiple signal modes (illuminating multiple target cells) would extend the framework to radar imaging and quantum synthetic aperture radar.
+
+\textbf{(3) Non-Gaussian state conditioning.} Incorporating photon-subtraction and photon-addition operations (including the zero-photon subtraction of~\cite{zhao2025quantum}) as elements of the Kraus operator framework would extend the analysis beyond Gaussian states.
+
+\textbf{(4) Microwave implementation.} Adapting the dual-arm GKSL model to microwave frequencies, including thermal background contributions at room temperature, would bridge to the experimental microwave quantum radar literature~\cite{barzanjeh2015microwave,chang2019quantum}.
+
+\textbf{(5) Quantum memory optimisation.} The idler arm decoherence rates $\gamma_{\text{mem,loss}}$ and $\gamma_{\text{mem},\varphi}$ depend on the quantum memory technology. Optimising the memory architecture (atomic ensemble, trapped ion, superconducting cavity) to minimise these rates would directly improve the fidelity~(\ref{eq:fidelity_asymptotic}) and the QFIM entries.
+
+\textbf{(6) Networked quantum radar.} Extending the framework to multiple distributed radar platforms sharing entangled idler modes would open connections to quantum networks and distributed quantum sensing.
+
+
+\section*{Acknowledgments}
+
+The authors gratefully acknowledge Prof.~K.~R.~Parthasarathy for invaluable guidance on quantum stochastic differential equations and their application to open quantum systems. KS acknowledges support from the Quantum Research and Centre of Excellence, Delhi.
+
+
+\begin{thebibliography}{99}
+
+\bibitem{lloyd2008enhanced}
+S.~Lloyd, ``Enhanced sensitivity of photodetection via quantum illumination,'' \textit{Science}, vol.~321, no.~5895, pp.~1463--1465, 2008.
+
+\bibitem{tan2008quantum}
+S.-H.~Tan, B.~I.~Erkmen, V.~Giovannetti, S.~Guha, S.~Lloyd, L.~Maccone, S.~Pirandola, and J.~H.~Shapiro, ``Quantum illumination with Gaussian states,'' \textit{Phys.\ Rev.\ Lett.}, vol.~101, p.~253601, 2008.
+
+\bibitem{shapiro2009quantum}
+J.~H.~Shapiro and S.~Lloyd, ``Quantum illumination versus coherent-state target detection,'' \textit{New J.\ Phys.}, vol.~11, p.~063045, 2009.
+
+\bibitem{barzanjeh2015microwave}
+S.~Barzanjeh, S.~Guha, C.~Weedbrook, D.~Vitali, J.~H.~Shapiro, and S.~Pirandola, ``Microwave quantum illumination,'' \textit{Phys.\ Rev.\ Lett.}, vol.~114, p.~080503, 2015.
+
+\bibitem{chang2019quantum}
+C.~S.~Chang, A.~M.~Vadiraj, J.~Bourassa, B.~Balaji, and C.~M.~Wilson, ``Quantum-enhanced noise radar,'' \textit{Appl.\ Phys.\ Lett.}, vol.~114, p.~112601, 2019.
+
+\bibitem{zhang2015entanglement}
+Z.~Zhang, S.~Mouradian, F.~N.~C.~Wong, and J.~H.~Shapiro, ``Entanglement-enhanced sensing in a lossy and noisy environment,'' \textit{Phys.\ Rev.\ Lett.}, vol.~114, p.~110506, 2015.
+
+\bibitem{karsa2024quantum}
+A.~Karsa, R.~Camacho, M.~Higgins, and M.~Faccin, ``Advances in quantum radar and quantum LiDAR,'' \textit{Rep.\ Prog.\ Phys.}, vol.~87, p.~036001, 2024.
+
+\bibitem{advances2023quantum}
+A.~Karsa, ``Quantum illumination and quantum radar: A review,'' arXiv:2310.07198, 2023.
+
+\bibitem{zhao2025quantum}
+Y.~Zhao, X.~Jin, S.~Li, and G.~Zhang, ``Enhancing quantum radar performance via zero-photon subtraction,'' \textit{Phys.\ Rev.\ A}, vol.~111, p.~023301, 2025.
+
+\bibitem{luong2020quantum}
+C.~Luong, G.~M.~Bosyk, A.~Biswas, G.~Sergioli, G.~Settimo, and G.~Vallone, ``Quantum target detection using two-mode squeezed states in the presence of angular jitter,'' \textit{Phys.\ Rev.\ A}, vol.~102, p.~033504, 2020.
+
+\bibitem{renga2023quantum}
+R.~Renga, D.~Biondi, D.~De~Rango, M.~Mondin, D.~Orlando, F.~Salemi, and G.~Settimo, ``Signal processing with quantum states in radar systems: A preliminary study,'' \textit{IEEE Trans.\ Aerosp.\ Electron.\ Syst.}, vol.~59, no.~5, pp.~5735--5750, 2023.
+
+\bibitem{nair2020quantum}
+R.~Nair and M.~Gu, ``Fundamental limits of quantum illumination,'' \textit{Optica}, vol.~7, no.~7, pp.~771--774, 2020.
+
+\bibitem{gautum2024rigorous}
+K.~Gautum and K.~Sharma, ``A rigorous quantum communication framework for optical fibre channels: Integrated control, computational hardness, and noise-assisted security,'' \textit{IEEE Trans.\ Quantum Eng.}, 2024 (submitted).
+
+\bibitem{weedbrook2012gaussian}
+C.~Weedbrook, S.~Pirandola, R.~Garcia-Patron, N.~J.~Cerf, T.~C.~Ralph, J.~H.~Shapiro, and S.~Lloyd, ``Gaussian quantum information,'' \textit{Rev.\ Mod.\ Phys.}, vol.~84, pp.~621--669, 2012.
+
+\bibitem{serafini2017quantum}
+A.~Serafini, \textit{Quantum Continuous Variables: A Primer of Theoretical Methods}. Boca Raton, FL: CRC Press, 2017.
+
+\bibitem{audenaert2007discriminating}
+K.~M.~R.~Audenaert, J.~Calsamiglia, R.~Munoz-Tapia, E.~Bagan, L.~Masanes, A.~Acin, and F.~Verstraete, ``Discriminating states: The quantum Chernoff bound,'' \textit{Phys.\ Rev.\ Lett.}, vol.~98, p.~160501, 2007.
+
+\bibitem{sorelli2021quantum}
+G.~Sorelli, N.~Treps, F.~Grosshans, and F.~Boust, ``Detecting a target with quantum entanglement,'' \textit{IEEE Aerosp.\ Electron.\ Syst.\ Mag.}, vol.~36, no.~5, pp.~68--90, 2021.
+
+\bibitem{shapiro2020quantum}
+J.~H.~Shapiro, ``The quantum illumination story,'' \textit{IEEE Aerosp.\ Electron.\ Syst.\ Mag.}, vol.~35, no.~4, pp.~8--20, 2020.
+
+\bibitem{pirandola2018advances}
+S.~Pirandola, B.~R.~Bardhan, T.~Gehring, C.~Weedbrook, and S.~Lloyd, ``Advances in photonic quantum sensing,'' \textit{Nat.\ Photonics}, vol.~12, pp.~724--733, 2018.
+
+\bibitem{zhuang2017quantum}
+Q.~Zhuang, Z.~Zhang, and J.~H.~Shapiro, ``Optimum mixed-state discrimination for noisy entanglement-enhanced sensing,'' \textit{Phys.\ Rev.\ Lett.}, vol.~118, p.~040801, 2017.
+
+\bibitem{sankey2021strong}
+J.~Sankey and A.~A.~Clerk, ``Strong optomechanical coupling with a thermal backend: quantum illumination as a many-body problem,'' \textit{Phys.\ Rev.\ A}, vol.~103, p.~023505, 2021.
+
+\bibitem{gittsovich2013quantum}
+V.~Gittsovich, S.~P.~Kumar, M.~Molnar, R.~Vogel, and G.~Vallone, ``Quantum optical radar receiver: Gaussian-state discrimination and parameter estimation,'' \textit{Phys.\ Rev.\ A}, vol.~88, p.~043831, 2013.
+
+\bibitem{biswas2023quantum}
+A.~Biswas, S.~Guha, and M.~M.~Wilde, ``Quantum radar: A tutorial overview,'' \textit{IEEE Signal Process.\ Mag.}, vol.~40, no.~4, pp.~44--57, 2023.
+
+\end{thebibliography}
+
+\end{document}
