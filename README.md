@@ -4,7 +4,7 @@
 
 ## Overview
 
-This repository contains the manuscript, simulation code, and figures for a paper that extends the five-layer fibre-optic classical-quantum (Cq) channel framework of ["A Rigorous Quantum Communication Framework for Optical Fibre Channels"](../) to **quantum illumination / quantum radar**.
+This repository contains the manuscript, simulation code, and figures for a paper that extends the five-layer fibre-optic classical-quantum (Cq) channel framework of "A Rigorous Quantum Communication Framework for Optical Fibre Channels" to **quantum illumination / quantum radar**.
 
 The core probe is upgraded from a single-mode coherent state to a **two-mode squeezed vacuum (TMSV)** state generated via spontaneous parametric down-conversion (SPDC): the signal mode illuminates the target region while the idler mode is retained locally as a quantum reference (the **quantum vacuum-seeded receiver**, QVR, architecture). The paper derives the full open-system dynamics of this dual-arm system, a fidelity-based detection metric, a three-parameter estimation theory, and an anti-jamming security guarantee.
 
